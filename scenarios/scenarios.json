@@ -1730,22 +1730,24 @@
     "description": "## Fix a Broken Service Selector\n\nA service `my-svc` has been created but no traffic reaches the pods. The pods are labelled `app=backend`, but the service selector is misconfigured.\n\n**Your task:**\n\nFix the `my-svc` service selector so it correctly targets the `backend` pods.\n\n```bash\n# Investigate:\nkubectl describe service my-svc\nkubectl get endpoints my-svc\nkubectl get pods --show-labels\n```",
     "hints": [
       {
-        "title": "Check endpoints",
-        "body": "If `kubectl get endpoints my-svc` shows `<none>`, the selector doesn't match any pods. Compare service selector with pod labels.",
-        "command": "kubectl get endpoints my-svc"
+        "title": "Identify the mismatch",
+        "body": "Check what label the pods actually carry, then compare it against the service selector.",
+        "command": "kubectl get pods --show-labels && kubectl get service my-svc -o jsonpath='{.spec.selector}'"
       },
       {
         "title": "Patch the service selector",
-        "body": "Use `kubectl patch` to fix the selector.",
+        "body": "The pods carry `app=backend` but the service selector says `app=wrong-label`. Use `kubectl patch` to point the selector at the correct label.",
         "command": "kubectl patch service my-svc --type=json -p='[{\"op\":\"replace\",\"path\":\"/spec/selector/app\",\"value\":\"backend\"}]'"
+      },
+      {
+        "title": "Verify endpoints are populated",
+        "body": "After fixing the selector, Kubernetes will automatically update the endpoint slice. Confirm the service now has live pod addresses.",
+        "command": "kubectl get endpoints my-svc"
       }
     ],
     "setup_commands": [
       {
-        "command": "kubectl create deployment backend-dep --image=nginx:alpine --replicas=2 2>/dev/null || true"
-      },
-      {
-        "command": "kubectl label deployment backend-dep app=backend --overwrite"
+        "command": "kubectl create deployment backend --image=nginx:alpine --replicas=2 2>/dev/null || true"
       },
       {
         "command": "kubectl apply -f - <<EOF\napiVersion: v1\nkind: Service\nmetadata:\n  name: my-svc\nspec:\n  selector:\n    app: wrong-label\n  ports:\n  - port: 80\n    targetPort: 80\nEOF"
@@ -1770,7 +1772,7 @@
     "default_namespace": "default",
     "teardown_commands": [
       {
-        "command": "kubectl delete deployment backend-dep --ignore-not-found"
+        "command": "kubectl delete deployment backend --ignore-not-found"
       },
       {
         "command": "kubectl delete svc my-svc --ignore-not-found"
