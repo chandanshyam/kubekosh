@@ -2584,7 +2584,7 @@
         "command": "kubectl wait --for=condition=Ready pod/config-pod --timeout=60s"
       },
       {
-        "command": "kubectl exec config-pod -- sh -c 'mkdir -p /src && echo \\'{ \"status\": \"ok\" }\\' > /src/config.json'"
+        "command": "kubectl exec config-pod -- sh -c 'mkdir -p /src && echo eyJzdGF0dXMiOiAib2sifQo= | base64 -d > /src/config.json'"
       },
       {
         "command": "kubectl exec config-pod -- mkdir -p /app"
@@ -2604,6 +2604,9 @@
     "teardown_commands": [
       {
         "command": "kubectl delete pod config-pod --ignore-not-found --grace-period=0 --force"
+      },
+      {
+        "command": "rm -f /tmp/config.json"
       }
     ]
   },
