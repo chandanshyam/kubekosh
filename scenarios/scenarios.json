@@ -2696,12 +2696,12 @@
     "difficulty": "Medium",
     "type": "task",
     "weight": 5,
-    "description": "## Restricting Container Privileges\n\nContainers run as root by default, which is a major security risk.\n\n**Your task:**\n\nCreate a Pod named `secure-pod` using the `nginx:alpine` image. Configure its security context so that it runs as user ID `1000`, runs as group ID `3000`, and sets `allowPrivilegeEscalation: false` at the container level.\n\n```bash\n# Check the security context of your pod\nkubectl get pod secure-pod -o yaml\n```",
+    "description": "## Restricting Container Privileges\n\nContainers run as root by default, which is a major security risk.\n\n**Your task:**\n\nCreate a Pod named `secure-pod` using the `busybox:1.36` image (command: `sleep 3600`). Configure its security context so that it runs as user ID `1000`, runs as group ID `3000`, and sets `allowPrivilegeEscalation: false` at the container level.\n\n```bash\n# Check the security context of your pod\nkubectl get pod secure-pod -o yaml\n```",
     "hints": [
       {
         "title": "Security Context Fields",
         "body": "You need `securityContext` at the Pod level for `runAsUser` and `runAsGroup`, and at the Container level for `allowPrivilegeEscalation`.",
-        "command": "cat <<EOF | kubectl apply -f -\napiVersion: v1\nkind: Pod\nmetadata:\n  name: secure-pod\nspec:\n  securityContext:\n    runAsUser: 1000\n    runAsGroup: 3000\n  containers:\n  - name: app\n    image: nginx:alpine\n    securityContext:\n      allowPrivilegeEscalation: false\nEOF"
+        "command": "cat <<EOF | kubectl apply -f -\napiVersion: v1\nkind: Pod\nmetadata:\n  name: secure-pod\nspec:\n  securityContext:\n    runAsUser: 1000\n    runAsGroup: 3000\n  containers:\n  - name: app\n    image: busybox:1.36\n    command: [\"sleep\", \"3600\"]\n    securityContext:\n      allowPrivilegeEscalation: false\nEOF"
       }
     ],
     "setup_commands": [],
