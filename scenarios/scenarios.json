@@ -624,6 +624,12 @@
           "command": "kubectl get pod limited-pod -o jsonpath='{.spec.containers[0].resources.limits.cpu}'",
           "expected_output": "200m",
           "match": "exact"
+        },
+        {
+          "description": "Memory request is 64Mi",
+          "command": "kubectl get pod limited-pod -o jsonpath='{.spec.containers[0].resources.requests.memory}'",
+          "expected_output": "64Mi",
+          "match": "exact"
         }
       ]
     },
