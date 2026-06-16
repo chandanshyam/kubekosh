@@ -24,7 +24,7 @@ async function resetProgress(scope, opts) {
   })
 }
 
-export default function ScenarioPanel({ scenario, onProgressUpdate, onScenarioStart, isExamMode }) {
+export default function ScenarioPanel({ scenario, onProgressUpdate, onScenarioStart, isExamMode, examProgress }) {
   const [tab, setTab] = useState('problem')
   const [setupState, setSetupState] = useState('idle') // idle | running | done | error
   const [validating, setValidating] = useState(false)
@@ -74,7 +74,9 @@ export default function ScenarioPanel({ scenario, onProgressUpdate, onScenarioSt
   }, [isExamMode])
 
   useEffect(() => {
-    if (!isExamMode || !scenario || scenario.progress?.status === 'completed') return
+    // Only track time in exam mode, and only if the scenario isn't already completed in the exam
+    const examCompleted = isExamMode && examProgress?.[scenario?.id]?.status === 'completed'
+    if (!isExamMode || !scenario || examCompleted) return
 
     // Begin tracking immediately: if progress database has no started_at record yet, initialize it
     if (!scenario.progress?.started_at) {
@@ -108,7 +110,7 @@ export default function ScenarioPanel({ scenario, onProgressUpdate, onScenarioSt
         keepalive: true
       }).catch(() => {})
     }
-  }, [scenario?.id, scenario?.progress?.status, isExamMode, onProgressUpdate])
+  }, [scenario?.id, scenario?.progress?.status, isExamMode, examProgress, onProgressUpdate])
 
   async function runSetup() {
     setSetupState('running')
@@ -190,6 +192,8 @@ export default function ScenarioPanel({ scenario, onProgressUpdate, onScenarioSt
   }
 
   const isCompleted = scenario.progress?.status === 'completed'
+  // In exam mode, use exam-specific completion status for the banner
+  const isExamCompleted = isExamMode && examProgress?.[scenario.id]?.status === 'completed'
 
   return (
     <div className={styles.panel}>
@@ -201,7 +205,7 @@ export default function ScenarioPanel({ scenario, onProgressUpdate, onScenarioSt
             {scenario.difficulty}
           </span>
           <span className={styles.typeTag}>{scenario.type === 'mcq' ? 'Multiple Choice' : 'Hands-on Task'}</span>
-          <span className={styles.weight}>{scenario.weight} pts</span>
+          {!isExamMode && <span className={styles.weight}>{scenario.weight} pts</span>}
         </div>
         <div className={styles.titleRow}>
           <div className={styles.scenarioTitle}>{scenario.title}</div>
@@ -248,20 +252,29 @@ export default function ScenarioPanel({ scenario, onProgressUpdate, onScenarioSt
                 }
               }}
             >
-              ↺ Reset
+              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: 5, verticalAlign: 'middle' }}>
+                <path d="M23 4v6h-6" />
+                <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
+              </svg>
+              Reset
             </button>
           )}
         </div>
-        {isCompleted && (
+        {(isCompleted && !isExamMode) && (
           <div className={styles.completedBanner}>
             <span>✓</span> Scenario completed
+          </div>
+        )}
+        {isExamCompleted && (
+          <div className={styles.completedBanner}>
+            <span>✓</span> Completed in this exam
           </div>
         )}
       </div>
 
       {/* Tabs */}
       <div className={styles.tabs}>
-        {['problem', ...(isExamMode ? [] : ['hints']), ...(scenario.type === 'task' && !isExamMode ? ['validate'] : [])].map(t => (
+        {['problem', ...(isExamMode ? [] : ['hints']), ...(scenario.type === 'task' ? ['validate'] : [])].map(t => (
           <button
             key={t}
             className={`${styles.tab} ${tab === t ? styles.activeTab : ''}`}

@@ -152,7 +152,11 @@ export default function TerminalComponent({ collapsed, onToggleCollapse }) {
         </div>
         <div className={styles.barRight}>
           <button className={styles.barBtn} onClick={connect} title="Reconnect terminal">
-            ↺ Reconnect
+            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: 5, verticalAlign: 'middle' }}>
+              <path d="M23 4v6h-6" />
+              <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
+            </svg>
+            Reconnect
           </button>
           <button className={styles.barBtn} onClick={onToggleCollapse} title={collapsed ? 'Expand terminal' : 'Collapse terminal'}>
             {collapsed ? '▲' : '▼'}

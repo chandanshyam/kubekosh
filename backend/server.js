@@ -67,6 +67,19 @@ function getDb() {
       snapshot      TEXT
     )
   `);
+
+  // Separate exam-session progress table — tracks completions per session
+  _db.exec(`
+    CREATE TABLE IF NOT EXISTS exam_progress (
+      session_id    TEXT NOT NULL,
+      scenario_id   TEXT NOT NULL,
+      status        TEXT NOT NULL DEFAULT 'in_progress',
+      attempts      INTEGER NOT NULL DEFAULT 0,
+      completed_at  TEXT,
+      PRIMARY KEY (session_id, scenario_id),
+      FOREIGN KEY (session_id) REFERENCES sessions(id)
+    )
+  `);
   return _db;
 }
 
@@ -258,10 +271,63 @@ app.get('/api/sessions/active', (req, res) => {
   const session = db.prepare(`SELECT * FROM sessions WHERE status='active' ORDER BY started_at DESC LIMIT 1`).get();
   if (!session) return res.json(null);
   const bundle = loadBundles().find(b => b.id === session.bundle_id);
-  const progress = loadProgress();
   const scenarioIds = bundle?.scenario_ids || [];
-  const completed = scenarioIds.filter(id => progress[id]?.status === 'completed').length;
+  // Count completions from exam_progress (exam-specific), not global progress
+  const completed = db.prepare(
+    `SELECT COUNT(*) as cnt FROM exam_progress WHERE session_id=? AND status='completed'`
+  ).get(session.id)?.cnt || 0;
   res.json({ ...session, scenarioCount: scenarioIds.length, completedCount: completed });
+});
+
+// GET /api/sessions/:id/exam-progress — return per-scenario progress for an exam session
+app.get('/api/sessions/:id/exam-progress', (req, res) => {
+  const db = getDb();
+  const rows = db.prepare(`SELECT * FROM exam_progress WHERE session_id=?`).all(req.params.id);
+  // Return as a map: scenario_id -> { status, attempts, completed_at }
+  const result = {};
+  for (const r of rows) {
+    result[r.scenario_id] = { status: r.status, attempts: r.attempts, completed_at: r.completed_at };
+  }
+  res.json(result);
+});
+
+// GET /api/sessions/history — list all completed/abandoned exam sessions (newest first)
+app.get('/api/sessions/history', (req, res) => {
+  const db = getDb();
+  const sessions = db.prepare(
+    `SELECT * FROM sessions WHERE status != 'active' ORDER BY started_at DESC`
+  ).all();
+  const bundles = loadBundles();
+
+  const result = sessions.map(s => {
+    const bundle = bundles.find(b => b.id === s.bundle_id);
+    let snapshot = [];
+    try { snapshot = s.snapshot ? JSON.parse(s.snapshot) : []; } catch (_) {}
+    const completed = snapshot.filter(x => x.status === 'completed');
+    const totalWeight = snapshot.reduce((a, x) => a + (x.weight || 0), 0);
+    const earnedWeight = completed.reduce((a, x) => a + (x.weight || 0), 0);
+    const pct = totalWeight > 0 ? Math.round((earnedWeight / totalWeight) * 100) : 0;
+    return {
+      id: s.id,
+      bundle_id: s.bundle_id,
+      bundle_name: bundle?.name || s.bundle_id,
+      bundle_icon: bundle?.icon || '🎓',
+      status: s.status,
+      started_at: s.started_at,
+      submitted_at: s.submitted_at,
+      exam_minutes: s.exam_minutes,
+      duration_secs: s.duration_secs,
+      scenarioCount: snapshot.length,
+      completedCount: completed.length,
+      totalWeight,
+      earnedWeight,
+      pct,
+      passed: pct >= 66,
+      snapshot,
+    };
+  });
+
+  res.json(result);
 });
 
 // POST /api/sessions/:id/submit — submit the exam session
@@ -270,15 +336,20 @@ app.post('/api/sessions/:id/submit', (req, res) => {
   const session = db.prepare(`SELECT * FROM sessions WHERE id=?`).get(req.params.id);
   if (!session) return res.status(404).json({ error: 'Session not found' });
   const bundle = loadBundles().find(b => b.id === session.bundle_id);
-  const progress = loadProgress();
   const scenarios = loadScenarios();
   const bundleScenarios = scenarios.filter(s => bundle?.scenario_ids?.includes(s.id));
+
+  // Build snapshot from exam_progress (exam-specific), falling back to 'not_started'
+  const examProgressRows = db.prepare(`SELECT * FROM exam_progress WHERE session_id=?`).all(req.params.id);
+  const examProgressMap = {};
+  for (const r of examProgressRows) examProgressMap[r.scenario_id] = r;
+
   const snapshot = bundleScenarios.map(s => ({
     id: s.id, title: s.title, weight: s.weight,
     category: s.category, type: s.type, difficulty: s.difficulty,
-    status: progress[s.id]?.status || 'not_started',
-    completed_at: progress[s.id]?.completed_at || null,
-    attempts: progress[s.id]?.attempts || 0,
+    status: examProgressMap[s.id]?.status || 'not_started',
+    completed_at: examProgressMap[s.id]?.completed_at || null,
+    attempts: examProgressMap[s.id]?.attempts || 0,
   }));
   const startedAt = new Date(session.started_at + 'Z');
   const durationSecs = Math.round((Date.now() - startedAt.getTime()) / 1000);
@@ -474,7 +545,7 @@ app.post('/api/scenarios/:id/validate', async (req, res) => {
     if (!passed) allPassed = false;
   }
 
-  // Update progress
+  // Update global practice progress
   const progress = loadProgress();
   const prev = progress[scenario.id] || { attempts: 0 };
   progress[scenario.id] = {
@@ -485,6 +556,28 @@ app.post('/api/scenarios/:id/validate', async (req, res) => {
     completed_at: allPassed ? new Date().toISOString() : prev.completed_at
   };
   saveProgress(progress);
+
+  // Also update exam_progress if there's an active session
+  const db = getDb();
+  const activeSession = db.prepare(`SELECT id FROM sessions WHERE status='active' LIMIT 1`).get();
+  if (activeSession) {
+    const ep = db.prepare(`SELECT * FROM exam_progress WHERE session_id=? AND scenario_id=?`)
+      .get(activeSession.id, scenario.id);
+    const epAttempts = (ep?.attempts || 0) + 1;
+    db.prepare(`
+      INSERT INTO exam_progress (session_id, scenario_id, status, attempts, completed_at)
+      VALUES (?, ?, ?, ?, ?)
+      ON CONFLICT(session_id, scenario_id) DO UPDATE SET
+        status = excluded.status,
+        attempts = excluded.attempts,
+        completed_at = COALESCE(excluded.completed_at, exam_progress.completed_at)
+    `).run(
+      activeSession.id, scenario.id,
+      allPassed ? 'completed' : 'in_progress',
+      epAttempts,
+      allPassed ? new Date().toISOString() : null
+    );
+  }
 
   res.json({ passed: allPassed, checks, attempts: progress[scenario.id].attempts });
 });
@@ -499,6 +592,7 @@ app.post('/api/scenarios/:id/answer', (req, res) => {
 
   const correct = selected === scenario.correct_option;
 
+  // Update global practice progress
   const progress = loadProgress();
   const prev = progress[scenario.id] || { attempts: 0 };
   progress[scenario.id] = {
@@ -510,6 +604,28 @@ app.post('/api/scenarios/:id/answer', (req, res) => {
     completed_at: correct ? new Date().toISOString() : prev.completed_at
   };
   saveProgress(progress);
+
+  // Also update exam_progress if there's an active session
+  const db = getDb();
+  const activeSession = db.prepare(`SELECT id FROM sessions WHERE status='active' LIMIT 1`).get();
+  if (activeSession) {
+    const ep = db.prepare(`SELECT * FROM exam_progress WHERE session_id=? AND scenario_id=?`)
+      .get(activeSession.id, scenario.id);
+    const epAttempts = (ep?.attempts || 0) + 1;
+    db.prepare(`
+      INSERT INTO exam_progress (session_id, scenario_id, status, attempts, completed_at)
+      VALUES (?, ?, ?, ?, ?)
+      ON CONFLICT(session_id, scenario_id) DO UPDATE SET
+        status = excluded.status,
+        attempts = excluded.attempts,
+        completed_at = COALESCE(excluded.completed_at, exam_progress.completed_at)
+    `).run(
+      activeSession.id, scenario.id,
+      correct ? 'completed' : 'in_progress',
+      epAttempts,
+      correct ? new Date().toISOString() : null
+    );
+  }
 
   res.json({
     correct,

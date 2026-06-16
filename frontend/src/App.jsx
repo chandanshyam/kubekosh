@@ -7,6 +7,7 @@ import BundleNav from './components/BundleNav'
 import ExamTimer from './components/ExamTimer'
 import ExamReport from './components/ExamReport'
 import ExamStartModal from './components/ExamStartModal'
+import ExamHistory from './components/ExamHistory'
 import styles from './App.module.css'
 
 const MIN_SIDEBAR_W = 180
@@ -35,6 +36,8 @@ export default function App() {
   const [examSession, setExamSession] = useState(null)   // active session object
   const [examReport, setExamReport] = useState(null)     // submitted report
   const [examModalBundle, setExamModalBundle] = useState(null) // bundle for start/retry modal
+  const [examProgress, setExamProgress] = useState({})   // exam-specific per-scenario progress
+  const [showHistory, setShowHistory] = useState(false)  // exam history modal
 
   // Sidebar resize / collapse
   const [sidebarW, setSidebarW] = useState(DEFAULT_SIDEBAR_W)
@@ -82,10 +85,13 @@ export default function App() {
   useEffect(() => {
     fetch('/api/sessions/active')
       .then(r => r.json())
-      .then(s => {
+      .then(async s => {
         if (s) {
           setExamSession(s)
           setActiveBundleId(s.bundle_id)
+          // Load exam-specific progress
+          const ep = await fetch(`/api/sessions/${s.id}/exam-progress`).then(r => r.json()).catch(() => ({}))
+          setExamProgress(ep || {})
         }
       })
       .catch(() => { })
@@ -142,10 +148,14 @@ export default function App() {
       const d2 = await fetch(`/api/scenarios/${activeId}`).then(r => r.json())
       setScenario(d2)
     }
-    // Refresh exam session completion count
+    // Refresh exam session completion count + exam-specific progress
     if (examSession) {
       const updated = await fetch('/api/sessions/active').then(r => r.json()).catch(() => null)
-      if (updated) setExamSession(updated)
+      if (updated) {
+        setExamSession(updated)
+        const ep = await fetch(`/api/sessions/${updated.id}/exam-progress`).then(r => r.json()).catch(() => ({}))
+        setExamProgress(ep || {})
+      }
     }
   }, [activeBundleId, activeId, examSession])
 
@@ -171,6 +181,7 @@ export default function App() {
     const bundle = bundles.find(b => b.id === examSession.bundle_id)
     setExamReport({ ...result, bundle })
     setExamSession(null)
+    setExamProgress({})
     refreshProgress()
   }, [examSession, bundles, refreshProgress])
 
@@ -178,6 +189,7 @@ export default function App() {
     if (!examSession) return
     await fetch(`/api/sessions/${examSession.id}/abandon`, { method: 'POST' }).catch(() => { })
     setExamSession(null)
+    setExamProgress({})
     refreshProgress()
   }, [examSession, refreshProgress])
 
@@ -247,7 +259,7 @@ export default function App() {
 
   return (
     <div className={styles.app}>
-      <Header clusterReady={clusterReady} />
+      <Header clusterReady={clusterReady} onShowHistory={() => setShowHistory(true)} />
 
       {/* Bundle navigation bar */}
       <BundleNav
@@ -287,6 +299,8 @@ export default function App() {
           width={currentSidebarW}
           activeBundleId={activeBundleId}
           onProgressUpdate={refreshProgress}
+          isExamMode={!!examSession}
+          examProgress={examProgress}
         />
 
         {/* Sidebar resize handle */}
@@ -300,6 +314,7 @@ export default function App() {
               onProgressUpdate={refreshProgress}
               onScenarioStart={handleScenarioStart}
               isExamMode={!!examSession}
+              examProgress={examProgress}
             />
           </div>
 
@@ -342,6 +357,11 @@ export default function App() {
           onCancel={() => setExamModalBundle(null)}
         />
       )}
+      {/* Exam history modal */}
+      {showHistory && (
+        <ExamHistory onClose={() => setShowHistory(false)} />
+      )}
+
       <footer className={styles.footer}>
         <div>&copy; {new Date().getFullYear()} The KubeKosh Project &bull; All rights reserved</div>
         <div>

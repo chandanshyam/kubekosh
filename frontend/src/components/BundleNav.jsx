@@ -43,7 +43,7 @@ export default function BundleNav({
     <>
       <nav className={`${styles.nav} ${collapsed ? styles.collapsed : ''}`} aria-label="Scenario bundles">
         {!collapsed && (
-          <div 
+          <div
             className={`${styles.track} ${(isDragging && dragDist > 5) ? styles.dragging : ''}`}
             ref={trackRef}
             onMouseDown={handleMouseDown}
@@ -83,8 +83,12 @@ export default function BundleNav({
                       <span className={styles.tagline}>{b.tagline}</span>
                     </div>
                     <div className={styles.countWrap}>
-                      <span className={styles.countNum}>{b.stats.completed}/{b.stats.total}</span>
-                      <span className={styles.countPct}>{pct}%</span>
+                      {!examSession && (
+                        <>
+                          <span className={styles.countNum}>{b.stats.completed}/{b.stats.total}</span>
+                          <span className={styles.countPct}>{pct}%</span>
+                        </>
+                      )}
                     </div>
 
                     {/* Start Exam button — shown on hover when not in exam mode */}
@@ -118,23 +122,28 @@ export default function BundleNav({
                           onProgressUpdate?.()
                         }}
                       >
-                        ↺
+                        <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M23 4v6h-6" />
+                          <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
+                        </svg>
                       </button>
                     )}
                   </div>
 
                   {/* Inline progress track */}
-                  <div className={styles.progressTrack}>
-                    <div className={styles.progressFill} style={{ width: `${pct}%` }} />
-                  </div>
+                  {!examSession && (
+                    <div className={styles.progressTrack}>
+                      <div className={styles.progressFill} style={{ width: `${pct}%` }} />
+                    </div>
+                  )}
                 </button>
               )
             })}
           </div>
         )}
         {!collapsed && <div className={styles.fadeOverlay} />}
-        <div 
-          className={styles.collapseWrap} 
+        <div
+          className={styles.collapseWrap}
           onClick={onToggleCollapse}
           title={collapsed ? "Show Bundles" : "Hide Bundles"}
         >

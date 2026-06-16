@@ -16,6 +16,7 @@ export default function Sidebar({
   scenarios, activeId, onSelect, loading,
   collapsed, onToggleCollapse, width,
   activeBundleId, onProgressUpdate,
+  isExamMode, examProgress,
 }) {
   const [filterDiff, setFilterDiff] = useState('All')
   const [filterType, setFilterType] = useState('All')
@@ -64,7 +65,10 @@ export default function Sidebar({
   }, [activeId, scenarios])
 
   const toggle = cat => setOpen(o => ({ ...o, [cat]: !o[cat] }))
-  const totalDone = scenarios.filter(s => s.progress?.status === 'completed').length
+
+  const totalDone = isExamMode
+    ? scenarios.filter(s => examProgress?.[s.id]?.status === 'completed').length
+    : scenarios.filter(s => s.progress?.status === 'completed').length
 
   const handleCategoryReset = async (e, cat) => {
     e.stopPropagation()
@@ -88,7 +92,11 @@ export default function Sidebar({
       {/* Top bar */}
       <div className={styles.sidebarTop}>
         {!collapsed && <span className={styles.sidebarTitle}>Scenarios</span>}
-        {!collapsed && <span className={styles.sidebarCount}>{totalDone}/{scenarios.length}</span>}
+        {!collapsed && (
+          <span className={styles.sidebarCount}>
+            {totalDone}/{scenarios.length}
+          </span>
+        )}
         <button
           className={styles.collapseBtn}
           onClick={onToggleCollapse}
@@ -147,14 +155,21 @@ export default function Sidebar({
                     <span className={styles.catName}>{cat}</span>
                   </div>
                   <div className={styles.accordionRight}>
-                    <span className={styles.catCount}>{catDone}/{items.length}</span>
+                    <span className={styles.catCount}>
+                      {isExamMode
+                        ? `${items.filter(s => examProgress?.[s.id]?.status === 'completed').length}/${items.length}`
+                        : `${catDone}/${items.length}`}
+                    </span>
                     {hasCatProgress && (
                       <button
                         className={styles.catResetBtn}
                         title={`Reset all progress in "${cat}"`}
                         onClick={e => handleCategoryReset(e, cat)}
                       >
-                        ↺
+                        <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M23 4v6h-6" />
+                          <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
+                        </svg>
                       </button>
                     )}
                   </div>
@@ -163,20 +178,23 @@ export default function Sidebar({
                 {isOpen && (
                   <div className={styles.itemsBox}>
                     {items.map(s => {
-                      const done = s.progress?.status === 'completed'
+                      const examDone = isExamMode && examProgress?.[s.id]?.status === 'completed'
+                      const done = !isExamMode && s.progress?.status === 'completed'
                       const active = s.id === activeId
-                      const hasAttempts = s.progress?.attempts > 0
+                      const hasAttempts = isExamMode
+                        ? (examProgress?.[s.id]?.attempts || 0) > 0
+                        : s.progress?.attempts > 0
                       return (
                         <button
                           key={s.id}
-                          className={`${styles.item} ${active ? styles.active : ''} ${done ? styles.done : ''}`}
+                          className={`${styles.item} ${active ? styles.active : ''} ${(done || examDone) ? styles.done : ''}`}
                           onClick={() => onSelect(s.id)}
                         >
                           <div className={styles.itemTop}>
                             <span className={styles.itemNum}>{scenarioIndex[s.id]}</span>
                             <span className={styles.typeIcon}>{TYPE_ICON[s.type] || '•'}</span>
                             <span className={styles.itemTitle}>{s.title}</span>
-                            {done && <span className={styles.checkmark}>✓</span>}
+                            {(done || examDone) && <span className={styles.checkmark}>✓</span>}
                             {/* Per-scenario reset — shown when item has attempts */}
                             {hasAttempts && (
                               <button
@@ -184,7 +202,10 @@ export default function Sidebar({
                                 title="Reset this scenario's progress"
                                 onClick={e => handleScenarioReset(e, s.id, s.title)}
                               >
-                                ↺
+                                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                  <path d="M23 4v6h-6" />
+                                  <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
+                                </svg>
                               </button>
                             )}
                           </div>
@@ -193,7 +214,10 @@ export default function Sidebar({
                               {s.difficulty}
                             </span>
                             <span className={`${styles.type} ${styles[s.type]}`}>{s.type.toUpperCase()}</span>
-                            <span className={styles.weight}>{s.weight}pt</span>
+                            {!isExamMode && <span className={styles.weight}>{s.weight}pt</span>}
+                            {isExamMode && examDone && (
+                              <span className={styles.examCompletedTag}>✓ Completed</span>
+                            )}
                           </div>
                         </button>
                       )

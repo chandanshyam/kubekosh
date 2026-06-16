@@ -1,10 +1,71 @@
 import { useState, useEffect } from 'react'
 import styles from './Header.module.css'
 
-export default function Header({ clusterReady }) {
+// ── Inline Reload Cache Modal ─────────────────────────────────────────────────
+function ReloadModal({ state, data, error, onClose, onReload }) {
+  return (
+    <div className={styles.modalOverlay} onClick={e => e.target === e.currentTarget && state !== 'loading' && onClose()}>
+      <div className={styles.reloadModal}>
+        {state === 'loading' && (
+          <>
+            <div className={styles.reloadModalIcon}>
+              <span className={styles.reloadSpinner} />
+            </div>
+            <div className={styles.reloadModalTitle}>Reloading Cache…</div>
+            <div className={styles.reloadModalSub}>Fetching latest scenarios and bundles from disk.</div>
+          </>
+        )}
+
+        {state === 'success' && (
+          <>
+            <div className={`${styles.reloadModalIcon} ${styles.reloadIconSuccess}`}>✓</div>
+            <div className={styles.reloadModalTitle}>Cache Reloaded</div>
+            <div className={styles.reloadModalSub}>{data?.message}</div>
+            <div className={styles.reloadStats}>
+              <div className={styles.reloadStat}>
+                <span className={styles.reloadStatNum}>{data?.scenarios_count ?? '—'}</span>
+                <span className={styles.reloadStatLabel}>Scenarios</span>
+              </div>
+              <div className={styles.reloadStatDivider} />
+              <div className={styles.reloadStat}>
+                <span className={styles.reloadStatNum}>{data?.bundles_count ?? '—'}</span>
+                <span className={styles.reloadStatLabel}>Bundles</span>
+              </div>
+            </div>
+            <div className={styles.reloadModalActions}>
+              <button className={styles.reloadPageBtn} onClick={onReload}>
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: 6, verticalAlign: 'middle' }}>
+                  <path d="M23 4v6h-6" />
+                  <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
+                </svg>
+                Reload Page
+              </button>
+              <button className={styles.reloadCloseBtn} onClick={onClose}>Close</button>
+            </div>
+          </>
+        )}
+
+        {state === 'error' && (
+          <>
+            <div className={`${styles.reloadModalIcon} ${styles.reloadIconError}`}>✕</div>
+            <div className={styles.reloadModalTitle}>Reload Failed</div>
+            <div className={styles.reloadModalError}>{error}</div>
+            <div className={styles.reloadModalActions}>
+              <button className={styles.reloadCloseBtn} onClick={onClose}>Close</button>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// ── Header ────────────────────────────────────────────────────────────────────
+export default function Header({ clusterReady, onShowHistory }) {
   const [theme, setTheme] = useState(
     () => localStorage.getItem('kubekosh-theme') || 'dark'
   )
+  const [reloadModal, setReloadModal] = useState(null) // null | { state, data, error }
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme)
@@ -14,86 +75,117 @@ export default function Header({ clusterReady }) {
   const toggleTheme = () => setTheme(t => t === 'dark' ? 'light' : 'dark')
 
   const handleReloadCache = async () => {
-    const sendReloadRequest = async () => {
-      return fetch('/api/cache/reload', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      });
-    };
-
+    setReloadModal({ state: 'loading', data: null, error: null })
     try {
-      let response = await sendReloadRequest();
+      const response = await fetch('/api/cache/reload', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      })
       if (response.ok) {
-        const data = await response.json();
-        alert(`Success: ${data.message}\nScenarios: ${data.scenarios_count}\nBundles: ${data.bundles_count}`);
-        window.location.reload();
+        const data = await response.json()
+        setReloadModal({ state: 'success', data, error: null })
       } else {
-        const data = await response.json().catch(() => ({}));
-        alert(`Error reloading cache: ${data.error || 'Unknown error'}`);
+        const data = await response.json().catch(() => ({}))
+        setReloadModal({ state: 'error', data: null, error: data.error || 'Unknown error' })
       }
     } catch (err) {
-      alert(`Network error reloading cache: ${err.message}`);
+      setReloadModal({ state: 'error', data: null, error: `Network error: ${err.message}` })
     }
-  };
+  }
 
   return (
-    <header className={styles.header}>
-      <div className={styles.brand}>
-        <div className={styles.logo}>
-          <img src="/logo.svg" alt="KubeKosh Logo" className={styles.logoImage} />
-          <span className={styles.logoText}>KubeKosh</span>
-          <span className={styles.version}>{import.meta.env.VITE_APP_VERSION}</span>
-        </div>
-        <span className={styles.tagline}>Interactive Kubernetes Playground</span>
-      </div>
-
-      <div className={styles.right}>
-        {/* GitHub link */}
-        <a
-          href="https://github.com/zeborg/kubekosh"
-          target="_blank"
-          rel="noopener noreferrer"
-          className={styles.githubBtn}
-          title="Visit GitHub repository"
-          aria-label="GitHub Repository"
-        >
-          <svg viewBox="0 0 512 512" width="16" height="16" fill="currentColor">
-            <path d="M256 6.3C114.6 6.3 0 120.9 0 262.3c0 113.3 73.3 209 175 242.9 12.8 2.2 17.6-5.4 17.6-12.2 0-6.1-.3-26.2-.3-47.7-64.3 11.8-81-15.7-86.1-30.1-2.9-7.4-15.4-30.1-26.2-36.2-9-4.8-21.8-16.6-.3-17 20.2-.3 34.6 18.6 39.4 26.2 23 38.7 59.8 27.8 74.6 21.1 2.2-16.6 9-27.8 16.3-34.2-57-6.4-116.5-28.5-116.5-126.4 0-27.8 9.9-50.9 26.2-68.8-2.6-6.4-11.5-32.6 2.6-67.8 0 0 21.4-6.7 70.4 26.2 20.5-5.8 42.2-8.6 64-8.6s43.5 2.9 64 8.6c49-33.3 70.4-26.2 70.4-26.2 14.1 35.2 5.1 61.4 2.6 67.8 16.3 17.9 26.2 40.6 26.2 68.8 0 98.2-59.8 120-116.8 126.4 9.3 8 17.3 23.4 17.3 47.4 0 34.2-.3 61.8-.3 70.4 0 6.7 4.8 14.7 17.6 12.2C438.7 471.3 512 375.3 512 262.3c0-141.4-114.6-256-256-256" fillRule="evenodd" clipRule="evenodd"/>
-          </svg>
-        </a>
-
-        {/* Theme toggle */}
-        <button
-          className={styles.themeBtn}
-          onClick={toggleTheme}
-          title={theme === 'dark' ? 'Switch to Light mode' : 'Switch to Dark mode'}
-          aria-label="Toggle theme"
-        >
-          {theme === 'dark' ? '☀️' : '🌙'}
-        </button>
-
-        {/* Cluster status */}
-        <div className={`${styles.clusterBadge} ${clusterReady ? styles.ready : styles.notReady}`}>
-          <span className={styles.dot} />
-          <span>{clusterReady ? 'Cluster Ready' : 'Connecting…'}</span>
+    <>
+      <header className={styles.header}>
+        <div className={styles.brand}>
+          <div className={styles.logo}>
+            <img src="/logo.svg" alt="KubeKosh Logo" className={styles.logoImage} />
+            <span className={styles.logoText}>KubeKosh</span>
+            <span className={styles.version}>{import.meta.env.VITE_APP_VERSION}</span>
+          </div>
+          <span className={styles.tagline}>Interactive Kubernetes Playground</span>
         </div>
 
-        {/* Reload cache */}
-        <div className={styles.reloadBtnContainer}>
-          <button
-            className={styles.reloadBtn}
-            onClick={handleReloadCache}
-            aria-label="Reload scenario cache"
+        <div className={styles.right}>
+          {/* GitHub link */}
+          <div className={styles.githubBtnContainer}>
+            <a
+              href="https://github.com/zeborg/kubekosh"
+              target="_blank"
+              rel="noopener noreferrer"
+              className={styles.githubBtn}
+              aria-label="GitHub Repository"
+            >
+              <svg viewBox="0 0 512 512" width="16" height="16" fill="currentColor">
+                <path d="M256 6.3C114.6 6.3 0 120.9 0 262.3c0 113.3 73.3 209 175 242.9 12.8 2.2 17.6-5.4 17.6-12.2 0-6.1-.3-26.2-.3-47.7-64.3 11.8-81-15.7-86.1-30.1-2.9-7.4-15.4-30.1-26.2-36.2-9-4.8-21.8-16.6-.3-17 20.2-.3 34.6 18.6 39.4 26.2 23 38.7 59.8 27.8 74.6 21.1 2.2-16.6 9-27.8 16.3-34.2-57-6.4-116.5-28.5-116.5-126.4 0-27.8 9.9-50.9 26.2-68.8-2.6-6.4-11.5-32.6 2.6-67.8 0 0 21.4-6.7 70.4 26.2 20.5-5.8 42.2-8.6 64-8.6s43.5 2.9 64 8.6c49-33.3 70.4-26.2 70.4-26.2 14.1 35.2 5.1 61.4 2.6 67.8 16.3 17.9 26.2 40.6 26.2 68.8 0 98.2-59.8 120-116.8 126.4 9.3 8 17.3 23.4 17.3 47.4 0 34.2-.3 61.8-.3 70.4 0 6.7 4.8 14.7 17.6 12.2C438.7 471.3 512 375.3 512 262.3c0-141.4-114.6-256-256-256" fillRule="evenodd" clipRule="evenodd"/>
+              </svg>
+            </a>
+          </div>
+
+          {/* Theme toggle */}
+          <div
+            className={styles.themeBtnContainer}
+            data-tooltip={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
           >
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M23 4v6h-6" />
-              <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
-            </svg>
-          </button>
+            <button
+              className={styles.themeBtn}
+              onClick={toggleTheme}
+              aria-label="Toggle theme"
+            >
+              {theme === 'dark' ? '☀️' : '🌙'}
+            </button>
+          </div>
+
+          {/* Cluster status */}
+          <div className={`${styles.clusterBadge} ${clusterReady ? styles.ready : styles.notReady}`}>
+            <span className={styles.dot} />
+            <span>{clusterReady ? 'Cluster Ready' : 'Connecting…'}</span>
+          </div>
+
+          {/* Exam history */}
+          <div className={styles.historyBtnContainer}>
+            <button
+              className={styles.historyBtn}
+              onClick={onShowHistory}
+              aria-label="View exam history"
+              id="exam-history-btn"
+            >
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                <polyline points="14 2 14 8 20 8" />
+                <line x1="16" y1="13" x2="8" y2="13" />
+                <line x1="16" y1="17" x2="8" y2="17" />
+                <polyline points="10 9 9 9 8 9" />
+              </svg>
+            </button>
+          </div>
+
+          {/* Reload cache */}
+          <div className={styles.reloadBtnContainer}>
+            <button
+              className={`${styles.reloadBtn} ${reloadModal?.state === 'loading' ? styles.reloadBtnSpinning : ''}`}
+              onClick={handleReloadCache}
+              disabled={reloadModal?.state === 'loading'}
+              aria-label="Reload scenario cache"
+            >
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M23 4v6h-6" />
+                <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
+              </svg>
+            </button>
+          </div>
         </div>
-      </div>
-    </header>
+      </header>
+
+      {/* Reload cache modal */}
+      {reloadModal && (
+        <ReloadModal
+          state={reloadModal.state}
+          data={reloadModal.data}
+          error={reloadModal.error}
+          onClose={() => setReloadModal(null)}
+          onReload={() => window.location.reload()}
+        />
+      )}
+    </>
   )
 }
