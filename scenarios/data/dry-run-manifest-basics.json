@@ -5,7 +5,7 @@
   "difficulty": "Easy",
   "type": "task",
   "weight": 4,
-  "description": "## Generating and Applying Manifests with Dry Run\n\nInstead of writing YAML from scratch, you can use `kubectl` to generate templates using `--dry-run=client -o yaml` and then apply them.\n\n**Your task:**\n\nUse `kubectl run` with `--dry-run=client -o yaml` to generate a Pod manifest for `web-pod` using image `httpd:alpine`, then pipe it directly to `kubectl apply -f -` to create the pod.\n\n```bash\nkubectl run web-pod --image=httpd:alpine --dry-run=client -o yaml | kubectl apply -f -\n```",
+  "description": "## Generating and Applying Manifests with Dry Run\n\nInstead of writing YAML from scratch, you can use `kubectl` to generate templates using `--dry-run=client -o yaml` and then apply them.\n\n**Your task:**\n\nUse `kubectl run` with `--dry-run=client -o yaml` to generate a Pod manifest for `web-pod` using image `httpd:alpine`, then pipe it directly to `kubectl apply` to create the pod.\n\n> 💡 Tip: Chain the `kubectl run` dry-run output directly into `kubectl apply` using a pipe.",
   "hints": [
     {
       "title": "Combine dry-run with apply",

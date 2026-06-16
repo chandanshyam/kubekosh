@@ -5,7 +5,7 @@
   "difficulty": "Easy",
   "type": "task",
   "weight": 5,
-  "description": "## Rolling Back a Deployment\n\nA deployment `api-server` was mistakenly updated to a broken image. Your task is to roll it back to the previous working revision.\n\n**Your task:**\n\nRoll back the `api-server` deployment to its previous revision.\n\n```bash\n# Check rollout history\nkubectl rollout history deployment/api-server\n# Rollback\nkubectl rollout undo deployment/api-server\n```",
+  "description": "## Rolling Back a Deployment\n\nA deployment `api-server` was mistakenly updated to a broken image. Your task is to roll it back to the previous working revision.\n\n**Your task:**\n\nRoll back the `api-server` deployment to its previous revision.\n\n> 💡 Tip: Check `kubectl rollout --help` for subcommands that deal with revision history.",
   "hints": [
     {
       "title": "Undo a rollout",

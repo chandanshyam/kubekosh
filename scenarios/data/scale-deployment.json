@@ -5,7 +5,7 @@
   "difficulty": "Easy",
   "type": "task",
   "weight": 4,
-  "description": "## Scaling a Deployment\n\nA deployment named `webapp` is currently running with **1 replica**. Traffic has increased and you need to scale it up.\n\n**Your task:**\n\nScale the `webapp` deployment to **4 replicas** and verify all pods become Ready.\n\n```bash\n# You can use the imperative command\nkubectl scale deployment webapp --replicas=4\n# Or edit the manifest\nkubectl edit deployment webapp\n```",
+  "description": "## Scaling a Deployment\n\nA deployment named `webapp` is currently running with **1 replica**. Traffic has increased and you need to scale it up.\n\n**Your task:**\n\nScale the `webapp` deployment to **4 replicas** and verify all pods become Ready.",
   "hints": [
     {
       "title": "Scale imperatively",

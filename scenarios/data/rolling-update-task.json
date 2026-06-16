@@ -5,7 +5,7 @@
   "difficulty": "Easy",
   "type": "task",
   "weight": 5,
-  "description": "## Perform a Rolling Update\n\nA Deployment named `app-v1` is running `nginx:1.24`. Your team needs to upgrade it to `nginx:1.25`.\n\n**Your task:**\n\nUpdate the image of the `app-v1` deployment to `nginx:1.25` using a rolling update strategy. Ensure all replicas are running the new image.\n\n```bash\n# Hint: kubectl set image can update an image in-place\nkubectl set image deployment/<name> <container>=<image>\n```",
+  "description": "## Perform a Rolling Update\n\nA Deployment named `app-v1` is running `nginx:1.24`. Your team needs to upgrade it to `nginx:1.25`.\n\n**Your task:**\n\nUpdate the image of the `app-v1` deployment to `nginx:1.25` using a rolling update strategy. Ensure all replicas are running the new image.",
   "hints": [
     {
       "title": "Set a new image on a Deployment",
