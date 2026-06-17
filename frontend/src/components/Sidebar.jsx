@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react'
 import styles from './Sidebar.module.css'
+import { useConfirm } from './useConfirm'
 
 const DIFF_COLOR = { Easy: 'green', Medium: 'amber', Hard: 'red' }
 const TYPE_ICON  = { task: '⚙', mcq: '◉' }
@@ -20,6 +21,7 @@ export default function Sidebar({
 }) {
   const [filterDiff, setFilterDiff] = useState('All')
   const [filterType, setFilterType] = useState('All')
+  const { confirm, ConfirmUI } = useConfirm()
 
   const filteredScenarios = useMemo(() => {
     return scenarios.filter(s => {
@@ -72,23 +74,37 @@ export default function Sidebar({
 
   const handleCategoryReset = async (e, cat) => {
     e.stopPropagation()
-    if (!window.confirm(`Reset all progress in "${cat}"?`)) return
+    const ok = await confirm({
+      title: 'Reset Category Progress',
+      message: `Reset all progress in "${cat}"?`,
+      confirmLabel: 'Reset',
+      danger: true,
+    })
+    if (!ok) return
     await resetProgress('category', { category: cat })
     onProgressUpdate?.()
   }
 
   const handleScenarioReset = async (e, scenarioId, title) => {
     e.stopPropagation()
-    if (!window.confirm(`Reset progress for "${title}"?`)) return
+    const ok = await confirm({
+      title: 'Reset Scenario Progress',
+      message: `Reset progress for "${title}"?`,
+      confirmLabel: 'Reset',
+      danger: true,
+    })
+    if (!ok) return
     await resetProgress('scenario', { scenarioId })
     onProgressUpdate?.()
   }
 
   return (
-    <aside
-      className={`${styles.sidebar} ${collapsed ? styles.collapsed : ''}`}
-      style={{ width, minWidth: width }}
-    >
+    <>
+      {ConfirmUI}
+      <aside
+        className={`${styles.sidebar} ${collapsed ? styles.collapsed : ''}`}
+        style={{ width, minWidth: width }}
+      >
       {/* Top bar */}
       <div className={styles.sidebarTop}>
         {!collapsed && <span className={styles.sidebarTitle}>Scenarios</span>}
@@ -256,5 +272,6 @@ export default function Sidebar({
         </div>
       )}
     </aside>
+    </>
   )
 }

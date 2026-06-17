@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import styles from './ScenarioPanel.module.css'
+import { useConfirm } from './useConfirm'
 
 // Inline markdown: renders without a wrapping <p> — safe for buttons/spans
 const inlineComponents = {
@@ -28,6 +29,7 @@ export default function ScenarioPanel({ scenario, onProgressUpdate, onScenarioSt
   const [tab, setTab] = useState('problem')
   const [setupState, setSetupState] = useState('idle') // idle | running | done | error
   const [validating, setValidating] = useState(false)
+  const { confirm, ConfirmUI } = useConfirm()
   const [validResult, setValidResult] = useState(null)
   const [selectedOption, setSelectedOption] = useState(null)
   const [mcqResult, setMcqResult] = useState(null)
@@ -197,6 +199,7 @@ export default function ScenarioPanel({ scenario, onProgressUpdate, onScenarioSt
 
   return (
     <div className={styles.panel}>
+      {ConfirmUI}
       {/* Scenario header */}
       <div className={styles.scenarioHeader}>
         <div className={styles.scenarioMeta}>
@@ -289,10 +292,14 @@ export default function ScenarioPanel({ scenario, onProgressUpdate, onScenarioSt
               className={styles.resetBtn}
               title="Reset progress for this scenario"
               onClick={async () => {
-                const msg = scenario.type === 'task'
+                const title = scenario.type === 'task'
+                  ? 'Reset Scenario & Environment'
+                  : 'Reset Scenario Progress'
+                const message = scenario.type === 'task'
                   ? `Reset progress and cluster state for "${scenario.title}"?\n\nThis will run teardown to clean the environment.`
                   : `Reset progress for "${scenario.title}"?`
-                if (!window.confirm(msg)) return
+                const ok = await confirm({ title, message, confirmLabel: 'Reset', danger: true })
+                if (!ok) return
                 await resetProgress('scenario', { scenarioId: scenario.id })
                 setSelectedOption(null)
                 setMcqResult(null)

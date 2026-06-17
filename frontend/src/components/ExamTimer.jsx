@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import styles from './ExamTimer.module.css'
+import { useConfirm } from './useConfirm'
 
 function formatTime(secs) {
   if (secs < 0) secs = 0
@@ -41,19 +42,33 @@ export default function ExamTimer({ session, bundle, onSubmit, onAbandon }) {
   const pct = Math.min(100, (elapsed / durationSecs) * 100)
   const urgent = remaining < 600 // < 10 min
 
-  const handleSubmit = useCallback(async () => {
-    if (!window.confirm(`Submit exam now?\n\n${session.completedCount || 0} of ${session.scenarioCount || '?'} scenarios completed.`)) return
-    onSubmit()
-  }, [session, onSubmit])
+  const { confirm, ConfirmUI } = useConfirm()
 
-  const handleAbandon = useCallback(() => {
-    if (!window.confirm('Abandon this exam?\n\nYour progress will be saved but no score report will be generated.')) return
+  const handleSubmit = useCallback(async () => {
+    const ok = await confirm({
+      title: 'Submit Exam',
+      message: `Submit exam now?\n\n${session.completedCount || 0} of ${session.scenarioCount || '?'} scenarios completed.`,
+      confirmLabel: 'Submit',
+    })
+    if (!ok) return
+    onSubmit()
+  }, [session, onSubmit, confirm])
+
+  const handleAbandon = useCallback(async () => {
+    const ok = await confirm({
+      title: 'Abandon Exam',
+      message: 'Abandon this exam?\n\nYour progress will be saved but no score report will be generated.',
+      confirmLabel: 'Abandon',
+      danger: true,
+    })
+    if (!ok) return
     onAbandon()
-  }, [onAbandon])
+  }, [onAbandon, confirm])
 
   if (!session) return null
 
   return (
+    <>
     <div className={`${styles.timer} ${urgent ? styles.urgent : ''}`}>
       <div className={styles.left}>
         <span className={styles.icon}>⏱</span>
@@ -87,5 +102,7 @@ export default function ExamTimer({ session, bundle, onSubmit, onAbandon }) {
         </button>
       </div>
     </div>
+    {ConfirmUI}
+    </>
   )
 }

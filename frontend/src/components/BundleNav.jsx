@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react'
 import styles from './BundleNav.module.css'
+import { useConfirm } from './useConfirm'
 
 async function resetProgress(scope, opts) {
   await fetch('/api/progress/reset', {
@@ -17,6 +18,7 @@ export default function BundleNav({
   const [startX, setStartX] = useState(0)
   const [scrollLeft, setScrollLeft] = useState(0)
   const [dragDist, setDragDist] = useState(0)
+  const { confirm, ConfirmUI } = useConfirm()
 
   const handleMouseDown = (e) => {
     if (!trackRef.current) return
@@ -41,6 +43,7 @@ export default function BundleNav({
 
   return (
     <>
+      {ConfirmUI}
       <nav className={`${styles.nav} ${collapsed ? styles.collapsed : ''}`} aria-label="Scenario bundles">
         {!collapsed && (
           <div
@@ -117,7 +120,13 @@ export default function BundleNav({
                         title={`Reset all progress in "${b.name}"`}
                         onClick={async e => {
                           e.stopPropagation()
-                          if (!window.confirm(`Reset all progress in "${b.name}"?`)) return
+                          const ok = await confirm({
+                            title: 'Reset Bundle Progress',
+                            message: `Reset all progress in "${b.name}"?`,
+                            confirmLabel: 'Reset',
+                            danger: true,
+                          })
+                          if (!ok) return
                           await resetProgress('bundle', { bundleId: b.id })
                           onProgressUpdate?.()
                         }}
