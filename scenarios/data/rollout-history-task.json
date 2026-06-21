@@ -1,0 +1,60 @@
+{
+  "id": "rollout-history-task",
+  "title": "Rollout History and Targeted Rollback",
+  "category": "Workloads",
+  "difficulty": "Medium",
+  "type": "task",
+  "weight": 6,
+  "description": "## Rollout History and Targeted Rollback\n\nEvery `kubectl set image` or `kubectl apply` on a Deployment creates a new **revision**. You can inspect history and roll back to any specific revision — critical when a rollback must skip intermediate bad versions.\n\n**Your task:**\n\nA Deployment named `versioned-app` has been updated through three image versions. It is now running a broken image.\n\n1. Inspect the rollout history: `kubectl rollout history deployment/versioned-app`\n2. Examine revision 2 in detail to confirm it used `nginx:1.24`\n3. Roll back **specifically to revision 2** (not just the previous revision)\n\n```bash\n# View all revisions:\nkubectl rollout history deployment/versioned-app\n\n# Inspect a specific revision:\nkubectl rollout history deployment/versioned-app --revision=2\n\n# Roll back to a specific revision:\nkubectl rollout undo deployment/versioned-app --to-revision=2\n```",
+  "hints": [
+    {
+      "title": "View rollout history",
+      "body": "kubectl rollout history shows all recorded revisions. Each image change creates a new revision.",
+      "command": "kubectl rollout history deployment/versioned-app"
+    },
+    {
+      "title": "Roll back to a specific revision",
+      "body": "Use --to-revision=N to target a specific revision rather than just the last one.",
+      "command": "kubectl rollout undo deployment/versioned-app --to-revision=2"
+    }
+  ],
+  "setup_commands": [
+    {
+      "command": "kubectl create deployment versioned-app --image=nginx:1.23 2>/dev/null || true"
+    },
+    {
+      "command": "kubectl rollout status deployment/versioned-app --timeout=60s"
+    },
+    {
+      "command": "kubectl set image deployment/versioned-app nginx=nginx:1.24"
+    },
+    {
+      "command": "kubectl rollout status deployment/versioned-app --timeout=60s"
+    },
+    {
+      "command": "kubectl set image deployment/versioned-app nginx=nginx:invalid-broken-99"
+    }
+  ],
+  "validation": {
+    "commands": [
+      {
+        "description": "Deployment image is rolled back to nginx:1.24",
+        "command": "kubectl get deployment versioned-app -o jsonpath='{.spec.template.spec.containers[0].image}'",
+        "expected_output": "nginx:1.24",
+        "match": "exact"
+      },
+      {
+        "description": "Deployment has at least 1 ready replica",
+        "command": "kubectl get deployment versioned-app -o jsonpath='{.status.readyReplicas}' 2>/dev/null | grep -v '^$' || echo 0",
+        "expected_output": "0",
+        "match": "not_contains"
+      }
+    ]
+  },
+  "default_namespace": "default",
+  "teardown_commands": [
+    {
+      "command": "kubectl delete deployment versioned-app --ignore-not-found"
+    }
+  ]
+}

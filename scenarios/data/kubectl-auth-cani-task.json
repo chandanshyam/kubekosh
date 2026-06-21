@@ -1,0 +1,73 @@
+{
+  "id": "kubectl-auth-cani-task",
+  "title": "Verifying RBAC Permissions with kubectl auth can-i",
+  "category": "Cluster Administration",
+  "difficulty": "Medium",
+  "type": "task",
+  "weight": 6,
+  "description": "## Verifying RBAC Permissions with `kubectl auth can-i`\n\n`kubectl auth can-i` lets you check whether the **current user** (or impersonate another user/ServiceAccount) can perform a specific action — without actually performing it. This is essential for auditing RBAC configurations.\n\nSyntax:\n```bash\nkubectl auth can-i <verb> <resource> [--namespace=<ns>] [--as=<user>]\n```\n\n**Your task:**\n\n1. Create a ServiceAccount named `audit-sa` in the namespace `audit-ns`\n2. Create a Role named `secret-viewer` in `audit-ns` allowing `get` and `list` on `secrets`\n3. Create a RoleBinding named `audit-binding` that binds `secret-viewer` to `audit-sa`\n4. Verify the permissions using `kubectl auth can-i` impersonating the ServiceAccount:\n   - Confirm `audit-sa` **can** `get secrets` in `audit-ns`\n   - Confirm `audit-sa` **cannot** `delete secrets` in `audit-ns`\n\n```bash\n# Impersonate the ServiceAccount:\nkubectl auth can-i get secrets -n audit-ns --as=system:serviceaccount:audit-ns:audit-sa\nkubectl auth can-i delete secrets -n audit-ns --as=system:serviceaccount:audit-ns:audit-sa\n```",
+  "hints": [
+    {
+      "title": "Create the namespace and ServiceAccount",
+      "body": "Create the namespace first, then the ServiceAccount inside it.",
+      "command": "kubectl create namespace audit-ns && kubectl create serviceaccount audit-sa -n audit-ns"
+    },
+    {
+      "title": "Create Role and RoleBinding",
+      "body": "Use kubectl create role and rolebinding imperatively.",
+      "command": "kubectl create role secret-viewer --verb=get,list --resource=secrets -n audit-ns && kubectl create rolebinding audit-binding --role=secret-viewer --serviceaccount=audit-ns:audit-sa -n audit-ns"
+    },
+    {
+      "title": "Verify with kubectl auth can-i --as",
+      "body": "The --as flag impersonates a user or ServiceAccount. ServiceAccount format: system:serviceaccount:<namespace>:<name>",
+      "command": "kubectl auth can-i get secrets -n audit-ns --as=system:serviceaccount:audit-ns:audit-sa"
+    }
+  ],
+  "setup_commands": [],
+  "validation": {
+    "commands": [
+      {
+        "description": "Namespace 'audit-ns' exists",
+        "command": "kubectl get namespace audit-ns -o jsonpath='{.metadata.name}'",
+        "expected_output": "audit-ns",
+        "match": "exact"
+      },
+      {
+        "description": "ServiceAccount 'audit-sa' exists in audit-ns",
+        "command": "kubectl get serviceaccount audit-sa -n audit-ns -o jsonpath='{.metadata.name}'",
+        "expected_output": "audit-sa",
+        "match": "exact"
+      },
+      {
+        "description": "Role 'secret-viewer' allows get on secrets",
+        "command": "kubectl get role secret-viewer -n audit-ns -o jsonpath='{.rules[0].resources[*]}'",
+        "expected_output": "secrets",
+        "match": "contains"
+      },
+      {
+        "description": "audit-sa CAN get secrets in audit-ns",
+        "command": "kubectl auth can-i get secrets -n audit-ns --as=system:serviceaccount:audit-ns:audit-sa",
+        "expected_output": "yes",
+        "match": "exact"
+      },
+      {
+        "description": "RoleBinding 'audit-binding' binds to subject 'audit-sa'",
+        "command": "kubectl get rolebinding audit-binding -n audit-ns -o jsonpath='{.subjects[0].name}'",
+        "expected_output": "audit-sa",
+        "match": "exact"
+      },
+      {
+        "description": "Role 'secret-viewer' does not grant delete verb",
+        "command": "kubectl get role secret-viewer -n audit-ns -o jsonpath='{.rules[0].verbs}'",
+        "expected_output": "[\"get\",\"list\"]",
+        "match": "exact"
+      }
+    ]
+  },
+  "default_namespace": "default",
+  "teardown_commands": [
+    {
+      "command": "kubectl delete namespace audit-ns --ignore-not-found --wait=false"
+    }
+  ]
+}

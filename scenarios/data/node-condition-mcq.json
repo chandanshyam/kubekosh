@@ -1,0 +1,44 @@
+{
+  "id": "node-condition-mcq",
+  "title": "Interpreting Node Conditions",
+  "category": "Cluster Administration",
+  "difficulty": "Medium",
+  "type": "mcq",
+  "weight": 4,
+  "description": "## Interpreting Node Conditions\n\nYou run `kubectl describe node worker-1` and see the following in the `Conditions` section:\n\n```\nType                 Status  Reason\n----                 ------  ------\nMemoryPressure       True    KubeletHasSufficientMemory\nDiskPressure         True    KubeletHasSufficientDisk\nPIDPressure          False   KubeletHasSufficientPID\nReady                False   KubeletNotReady\n```\n\nWhat is the most likely cause of this node's `Ready=False` condition, and what should you investigate first?",
+  "options": [
+    {
+      "id": "a",
+      "text": "The node's container runtime (containerd/docker) has stopped — check `systemctl status containerd` on the node"
+    },
+    {
+      "id": "b",
+      "text": "The kubelet service has failed or lost connection to the API server — check `systemctl status kubelet` on the node"
+    },
+    {
+      "id": "c",
+      "text": "The node is out of disk space — check `df -h` on the node"
+    },
+    {
+      "id": "d",
+      "text": "A NetworkPolicy is blocking communication between the node and the control plane"
+    }
+  ],
+  "correct_option": "b",
+  "explanation": "`Ready=False` with reason `KubeletNotReady` means the **kubelet** is either not running or cannot reach the API server. The kubelet is responsible for sending heartbeat `NodeReady` conditions — if it stops, the node goes `NotReady` after the `node-monitor-grace-period` (default 40s). First check `systemctl status kubelet` on the affected node. `MemoryPressure=True` and `DiskPressure=True` would cause evictions but not a `NotReady` condition unless resources are critically exhausted. A NetworkPolicy cannot block kubelet-to-API-server traffic (that's host-network traffic, not pod network).",
+  "hints": [
+    {
+      "title": "Common NotReady causes",
+      "body": "1. kubelet stopped (systemctl status kubelet). 2. Network partition between node and API server. 3. Container runtime crashed. 4. Certificate expired (check kubelet logs). Start with: journalctl -u kubelet -n 50",
+      "command": "kubectl get nodes -o wide && kubectl describe node worker-1 | grep -A 15 Conditions"
+    },
+    {
+      "title": "Checking node conditions programmatically",
+      "body": "Use jsonpath to extract condition status for a specific type.",
+      "command": "kubectl get node worker-1 -o jsonpath='{.status.conditions[?(@.type==\"Ready\")].reason}'"
+    }
+  ],
+  "setup_commands": [],
+  "default_namespace": "default",
+  "teardown_commands": []
+}

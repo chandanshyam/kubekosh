@@ -1,0 +1,53 @@
+{
+  "id": "pending-pod-debug-task",
+  "title": "Debugging a Pending Pod",
+  "category": "Troubleshooting",
+  "difficulty": "Medium",
+  "type": "task",
+  "weight": 8,
+  "description": "## Debugging a Pending Pod\n\nA pod stuck in `Pending` state cannot be scheduled. Common causes:\n- **Insufficient resources** — no node has enough CPU/memory\n- **No matching nodeSelector** — label doesn't exist on any node\n- **Taint without toleration** — node repels the pod\n- **Unbound PVC** — pod waits for storage\n\nThe `Events` section of `kubectl describe pod` is the fastest way to identify the cause.\n\n**Your task:**\n\nA Pod named `stuck-pod` is stuck in `Pending`. Investigate why and fix it.\n\n```bash\n# Start your investigation:\nkubectl get pod stuck-pod\nkubectl describe pod stuck-pod\n```\n\n> 💡 Look at the `Events` section at the bottom of the `describe` output.",
+  "hints": [
+    {
+      "title": "Read the Events section",
+      "body": "kubectl describe pod shows a Warning event from the scheduler explaining why it cannot place the pod. The message will mention the specific constraint that cannot be satisfied.",
+      "command": "kubectl describe pod stuck-pod | grep -A 10 Events"
+    },
+    {
+      "title": "The pod has a nodeSelector that doesn't match any node",
+      "body": "Check what nodeSelector the pod is requesting, then check the labels on the available nodes.",
+      "command": "kubectl get pod stuck-pod -o jsonpath='{.spec.nodeSelector}' && kubectl get nodes --show-labels"
+    },
+    {
+      "title": "Fix: remove the bad nodeSelector",
+      "body": "Delete and recreate the pod without the nodeSelector.",
+      "command": "kubectl delete pod stuck-pod --ignore-not-found --force && kubectl run stuck-pod --image=nginx:alpine"
+    }
+  ],
+  "setup_commands": [
+    {
+      "command": "cat <<EOF | kubectl apply -f -\napiVersion: v1\nkind: Pod\nmetadata:\n  name: stuck-pod\nspec:\n  nodeSelector:\n    disk: nvme-does-not-exist\n  containers:\n  - name: app\n    image: nginx:alpine\nEOF"
+    }
+  ],
+  "validation": {
+    "commands": [
+      {
+        "description": "Pod 'stuck-pod' is now Running",
+        "command": "kubectl get pod stuck-pod -o jsonpath='{.status.phase}'",
+        "expected_output": "Running",
+        "match": "exact"
+      },
+      {
+        "description": "Pod has no problematic nodeSelector",
+        "command": "kubectl get pod stuck-pod -o jsonpath='{.spec.nodeSelector.disk}' 2>/dev/null || echo ''",
+        "expected_output": "nvme-does-not-exist",
+        "match": "not_contains"
+      }
+    ]
+  },
+  "default_namespace": "default",
+  "teardown_commands": [
+    {
+      "command": "kubectl delete pod stuck-pod --ignore-not-found --grace-period=0 --force"
+    }
+  ]
+}

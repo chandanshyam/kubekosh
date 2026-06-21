@@ -1,0 +1,44 @@
+{
+  "id": "node-drain-task",
+  "title": "Draining a Node for Maintenance",
+  "category": "Cluster Administration",
+  "difficulty": "Medium",
+  "type": "task",
+  "weight": 7,
+  "description": "## Draining a Node for Maintenance\n\n`kubectl drain` safely evicts all pods from a node before maintenance. It cordons the node (marks it unschedulable), then gracefully evicts every pod — respecting PodDisruptionBudgets and waiting for replacements to schedule elsewhere.\n\nKey flags:\n- `--ignore-daemonsets` — required because DaemonSet pods cannot be evicted (they are node-bound)\n- `--delete-emptydir-data` — required to evict pods using `emptyDir` volumes (data will be lost)\n- `--force` — evict pods not managed by a controller (bare pods)\n\n**Your task:**\n\nThe cluster node needs to go into a maintenance window.\n\n1. Find the node name using `kubectl get nodes`\n2. **Drain** the node using all three flags above\n3. Verify the node STATUS shows `Ready,SchedulingDisabled`\n\n> 💡 In production you would run `kubectl uncordon <node>` after maintenance is complete. The environment will be restored automatically after this scenario.\n\n```bash\nNODE=$(kubectl get nodes -o jsonpath='{.items[0].metadata.name}')\nkubectl drain $NODE --ignore-daemonsets --delete-emptydir-data --force\n```",
+  "hints": [
+    {
+      "title": "Get the node name and drain it",
+      "body": "Store the node name in a variable, then run drain with the required flags.",
+      "command": "NODE=$(kubectl get nodes -o jsonpath='{.items[0].metadata.name}') && kubectl drain $NODE --ignore-daemonsets --delete-emptydir-data --force"
+    },
+    {
+      "title": "Verify the node is cordoned",
+      "body": "After draining, kubectl get nodes should show Ready,SchedulingDisabled in the STATUS column.",
+      "command": "kubectl get nodes"
+    }
+  ],
+  "setup_commands": [],
+  "validation": {
+    "commands": [
+      {
+        "description": "Node is cordoned (spec.unschedulable=true after drain)",
+        "command": "kubectl get nodes -o jsonpath='{.items[0].spec.unschedulable}'",
+        "expected_output": "true",
+        "match": "exact"
+      },
+      {
+        "description": "Node STATUS shows SchedulingDisabled",
+        "command": "kubectl get nodes --no-headers | awk '{print $2}' | head -1",
+        "expected_output": "SchedulingDisabled",
+        "match": "contains"
+      }
+    ]
+  },
+  "default_namespace": "default",
+  "teardown_commands": [
+    {
+      "command": "kubectl uncordon $(kubectl get nodes -o jsonpath='{.items[0].metadata.name}') 2>/dev/null || true"
+    }
+  ]
+}

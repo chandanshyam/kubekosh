@@ -1,0 +1,68 @@
+{
+  "id": "projected-volume-task",
+  "title": "Projected Volume: ConfigMap and Secret Together",
+  "category": "Storage",
+  "difficulty": "Hard",
+  "type": "task",
+  "weight": 7,
+  "description": "## Projected Volume: Combining ConfigMap and Secret\n\nA **projected volume** merges multiple volume sources — ConfigMaps, Secrets, ServiceAccount tokens, and `downwardAPI` — into a **single directory** inside the container. This avoids cluttering the container with multiple separate mounts.\n\n**Your task:**\n\nCreate a Pod named `projected-pod` that uses a **single projected volume** mounted at `/config` combining:\n1. A ConfigMap named `app-settings` with key `mode=debug`\n2. A Secret named `app-token` with key `token=s3cr3t`\n\nBoth files should appear side-by-side at `/config/mode` and `/config/token` inside the container.\n\n```bash\n# Verify both files are present:\nkubectl exec projected-pod -- ls /config\nkubectl exec projected-pod -- cat /config/mode\nkubectl exec projected-pod -- cat /config/token\n```",
+  "hints": [
+    {
+      "title": "Create the ConfigMap and Secret first",
+      "body": "Create both source objects before the pod that mounts them.",
+      "command": "kubectl create configmap app-settings --from-literal=mode=debug && kubectl create secret generic app-token --from-literal=token=s3cr3t"
+    },
+    {
+      "title": "Projected volume manifest",
+      "body": "Use volumes[].projected.sources[] to list multiple sources. Each source has a configMap or secret key with the source name.",
+      "command": "cat <<EOF | kubectl apply -f -\napiVersion: v1\nkind: Pod\nmetadata:\n  name: projected-pod\nspec:\n  containers:\n  - name: app\n    image: busybox:1.36\n    command: [\"sleep\", \"3600\"]\n    volumeMounts:\n    - name: combined-config\n      mountPath: /config\n  volumes:\n  - name: combined-config\n    projected:\n      sources:\n      - configMap:\n          name: app-settings\n      - secret:\n          name: app-token\nEOF"
+    }
+  ],
+  "setup_commands": [],
+  "validation": {
+    "commands": [
+      {
+        "description": "ConfigMap 'app-settings' exists with mode=debug",
+        "command": "kubectl get configmap app-settings -o jsonpath='{.data.mode}'",
+        "expected_output": "debug",
+        "match": "exact"
+      },
+      {
+        "description": "Secret 'app-token' exists",
+        "command": "kubectl get secret app-token -o jsonpath='{.metadata.name}'",
+        "expected_output": "app-token",
+        "match": "exact"
+      },
+      {
+        "description": "Pod 'projected-pod' is Running",
+        "command": "kubectl get pod projected-pod -o jsonpath='{.status.phase}'",
+        "expected_output": "Running",
+        "match": "exact"
+      },
+      {
+        "description": "File /config/mode contains 'debug'",
+        "command": "kubectl exec projected-pod -- cat /config/mode 2>/dev/null",
+        "expected_output": "debug",
+        "match": "exact"
+      },
+      {
+        "description": "File /config/token exists (secret projected)",
+        "command": "kubectl exec projected-pod -- ls /config 2>/dev/null",
+        "expected_output": "token",
+        "match": "contains"
+      }
+    ]
+  },
+  "default_namespace": "default",
+  "teardown_commands": [
+    {
+      "command": "kubectl delete pod projected-pod --ignore-not-found --grace-period=0 --force"
+    },
+    {
+      "command": "kubectl delete configmap app-settings --ignore-not-found"
+    },
+    {
+      "command": "kubectl delete secret app-token --ignore-not-found"
+    }
+  ]
+}

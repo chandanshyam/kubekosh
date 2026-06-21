@@ -1,0 +1,59 @@
+{
+  "id": "multi-doc-yaml-task",
+  "title": "Applying Multi-Document YAML",
+  "category": "Core Concepts",
+  "difficulty": "Easy",
+  "type": "task",
+  "weight": 4,
+  "description": "## Applying Multi-Document YAML\n\nA single YAML file can contain **multiple Kubernetes resources** separated by `---`. This is useful for packaging related resources (e.g., a Deployment and its Service) into one file for atomic application.\n\n```yaml\napiVersion: v1\nkind: ConfigMap\nmetadata:\n  name: first\n---\napiVersion: v1\nkind: ConfigMap\nmetadata:\n  name: second\n```\n\n**Your task:**\n\nCreate a single file `/tmp/app-stack.yaml` containing **three resources** separated by `---`:\n1. A **Namespace** named `multi-doc-ns`\n2. A **ConfigMap** named `stack-config` in `multi-doc-ns` with key `version=v1`\n3. A **Deployment** named `stack-app` in `multi-doc-ns` using image `nginx:alpine` with 1 replica\n\nApply all three resources with a single `kubectl apply -f /tmp/app-stack.yaml` command.\n\n```bash\n# Apply all at once:\nkubectl apply -f /tmp/app-stack.yaml\n\n# Verify all three were created:\nkubectl get namespace multi-doc-ns\nkubectl get configmap stack-config -n multi-doc-ns\nkubectl get deployment stack-app -n multi-doc-ns\n```",
+  "hints": [
+    {
+      "title": "Write the multi-document YAML",
+      "body": "Use a heredoc to write all three resources with --- separators into a single file.",
+      "command": "cat <<'EOF' > /tmp/app-stack.yaml\napiVersion: v1\nkind: Namespace\nmetadata:\n  name: multi-doc-ns\n---\napiVersion: v1\nkind: ConfigMap\nmetadata:\n  name: stack-config\n  namespace: multi-doc-ns\ndata:\n  version: v1\n---\napiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: stack-app\n  namespace: multi-doc-ns\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: stack-app\n  template:\n    metadata:\n      labels:\n        app: stack-app\n    spec:\n      containers:\n      - name: app\n        image: nginx:alpine\nEOF"
+    },
+    {
+      "title": "Apply the file",
+      "body": "One kubectl apply command processes all documents in the file.",
+      "command": "kubectl apply -f /tmp/app-stack.yaml"
+    }
+  ],
+  "setup_commands": [],
+  "validation": {
+    "commands": [
+      {
+        "description": "Namespace 'multi-doc-ns' exists",
+        "command": "kubectl get namespace multi-doc-ns -o jsonpath='{.metadata.name}'",
+        "expected_output": "multi-doc-ns",
+        "match": "exact"
+      },
+      {
+        "description": "ConfigMap 'stack-config' has version=v1",
+        "command": "kubectl get configmap stack-config -n multi-doc-ns -o jsonpath='{.data.version}'",
+        "expected_output": "v1",
+        "match": "exact"
+      },
+      {
+        "description": "Deployment 'stack-app' exists in multi-doc-ns",
+        "command": "kubectl get deployment stack-app -n multi-doc-ns -o jsonpath='{.metadata.name}'",
+        "expected_output": "stack-app",
+        "match": "exact"
+      },
+      {
+        "description": "YAML file /tmp/app-stack.yaml exists",
+        "command": "test -f /tmp/app-stack.yaml && echo 'exists'",
+        "expected_output": "exists",
+        "match": "exact"
+      }
+    ]
+  },
+  "default_namespace": "default",
+  "teardown_commands": [
+    {
+      "command": "kubectl delete namespace multi-doc-ns --ignore-not-found --wait=false"
+    },
+    {
+      "command": "rm -f /tmp/app-stack.yaml"
+    }
+  ]
+}

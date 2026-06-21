@@ -1,0 +1,44 @@
+{
+  "id": "rbac-aggregated-mcq",
+  "title": "RBAC: Aggregated ClusterRoles",
+  "category": "Cluster Administration",
+  "difficulty": "Hard",
+  "type": "mcq",
+  "weight": 4,
+  "description": "## RBAC: Aggregated ClusterRoles\n\nYour team creates custom ClusterRoles for different personas. You want **any ClusterRole labeled `rbac.example.com/aggregate-to-monitoring: true`** to be automatically merged into a single `monitoring` ClusterRole — without having to update `monitoring` every time a new sub-role is added.\n\nWhich Kubernetes feature enables this?\n\n```yaml\nkind: ClusterRole\nmetadata:\n  name: monitoring\naggregationRule:\n  clusterRoleSelectors:\n  - matchLabels:\n      rbac.example.com/aggregate-to-monitoring: \"true\"\nrules: []\n```",
+  "options": [
+    {
+      "id": "a",
+      "text": "ClusterRoleBinding with a `subjects` list of all sub-roles — the API server merges their rules automatically"
+    },
+    {
+      "id": "b",
+      "text": "Aggregated ClusterRoles — the `aggregationRule.clusterRoleSelectors` field causes the controller to merge rules from matching ClusterRoles into this one"
+    },
+    {
+      "id": "c",
+      "text": "A RoleBinding with `roleRef.kind: ClusterRole` and `roleRef.name: monitoring` applied per namespace"
+    },
+    {
+      "id": "d",
+      "text": "Setting `rules: []` in the ClusterRole causes Kubernetes to inherit all rules from all other ClusterRoles"
+    }
+  ],
+  "correct_option": "b",
+  "explanation": "**Aggregated ClusterRoles** use the `aggregationRule` field to define a label selector. The `clusterrole-aggregation-controller` watches for ClusterRoles matching those labels and automatically merges their `rules[]` into the aggregating ClusterRole. This pattern is used by the built-in roles (`view`, `edit`, `admin`, `cluster-admin`) — you can extend them by creating a ClusterRole with the right aggregation label. The `rules: []` in the aggregating role is intentionally empty — it gets populated dynamically. Setting `rules: []` alone has no special behavior without `aggregationRule`.",
+  "hints": [
+    {
+      "title": "Built-in aggregation labels",
+      "body": "The built-in view/edit/admin roles use aggregation. You can extend them with: rbac.authorization.k8s.io/aggregate-to-view: 'true' etc.",
+      "command": "kubectl get clusterrole view -o yaml | grep aggregationRule -A 5"
+    },
+    {
+      "title": "Inspect the aggregation rule",
+      "body": "Check if a ClusterRole uses aggregation by looking for the aggregationRule field.",
+      "command": "kubectl get clusterrole <name> -o jsonpath='{.aggregationRule}'"
+    }
+  ],
+  "setup_commands": [],
+  "default_namespace": "default",
+  "teardown_commands": []
+}

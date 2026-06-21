@@ -36,6 +36,16 @@
     "crashloop-fix",
     "container-logging-mcq",
     "pod-disruption-budget-task",
-    "priority-class-task"
+    "priority-class-task",
+    "node-drain-task",
+    "rollout-history-task",
+    "kubectl-auth-cani-task",
+    "pending-pod-debug-task",
+    "projected-volume-task",
+    "kubectl-wait-task",
+    "downward-api-task",
+    "node-condition-mcq",
+    "multi-doc-yaml-task",
+    "rbac-aggregated-mcq"
   ]
 }
