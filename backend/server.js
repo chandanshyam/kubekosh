@@ -595,6 +595,7 @@ app.post('/api/scenarios/:id/validate', async (req, res) => {
       description: check.description,
       command: check.command,
       expected: check.expected_output,
+      match: check.match || 'exact',
       actual,
       passed
     });
