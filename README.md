@@ -162,7 +162,7 @@ scenarios/
 
 addons/
 ├── <addon-id>/       # One folder per add-on, each with an addon.json manifest
-└── _TEMPLATE/        # Manifest template for new add-ons
+└── SCHEMA.md         # Full manifest schema reference
 
 backend/
 └── server.js         # Express API + WebSocket PTY
@@ -204,15 +204,7 @@ Each scenario is a single JSON file in `scenarios/data` directory; each bundle i
 
 ### Adding Add-ons
 
-Each add-on is a folder under `addons/` containing a single `addon.json` manifest. Copy [`addons/_TEMPLATE/addon.json`](addons/_TEMPLATE/addon.json) as a starting point — its `id` must match the folder name.
-
-**Manifest checklist:**
-- `target` — `"os"` (CLI binary placed on the terminal `PATH`) or `"cluster"` (deployed into K3s)
-- `setup_commands` / `teardown_commands` — `kubectl`, `helm`, or native shell commands; **teardown must be idempotent** so cancel/remove can safely roll back
-- `dependencies` — other add-on ids to install first (e.g. `["helm"]`); resolved automatically
-- `health_command` — succeeds only when the add-on is actually ready
-- `${VERSION}`, `${ARCH}`, and `${ADDON_BIN}` are substituted into commands at runtime
-- optional `logo` (image URL) shown in the catalog, falling back to the emoji `icon`
+Each add-on is a folder under `addons/` containing a single `addon.json` manifest. See [`addons/SCHEMA.md`](addons/SCHEMA.md) for the full schema, field reference, runtime variables, and worked examples — its `id` must match the folder name.
 
 ### In-Memory Cache & Hot Reloading
 
