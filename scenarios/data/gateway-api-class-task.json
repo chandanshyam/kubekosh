@@ -1,0 +1,41 @@
+{
+  "id": "gateway-api-class-task",
+  "title": "Define a GatewayClass",
+  "category": "Gateway API",
+  "difficulty": "Easy",
+  "type": "task",
+  "weight": 4,
+  "description": "## Define a GatewayClass\n\nIn Kubernetes Gateway API, a `GatewayClass` is a cluster-scoped resource that acts as a template for provisioning `Gateway` instances. It defines the underlying controller implementation (such as Envoy, Traefik, or Istio) that will manage the network infrastructure.\n\n**Your task:**\n\nCreate a cluster-scoped `GatewayClass` named `shared-gateway-class` that is configured with:\n- `controllerName` set to `example.com/gateway-controller`\n\n```bash\n# Verify your progress:\nkubectl get gatewayclass shared-gateway-class\n```",
+  "hints": [
+    {
+      "title": "GatewayClass template",
+      "body": "GatewayClass is a cluster-scoped resource. A basic definition requires apiVersion: gateway.networking.k8s.io/v1, kind: GatewayClass, and spec.controllerName.",
+      "command": "kubectl apply -f - <<'EOF'\napiVersion: gateway.networking.k8s.io/v1\nkind: GatewayClass\nmetadata:\n  name: shared-gateway-class\nspec:\n  controllerName: example.com/gateway-controller\nEOF"
+    }
+  ],
+  "setup_commands": [
+    { "command": "kubectl apply --server-side --force-conflicts -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.2.1/standard-install.yaml" },
+    { "command": "kubectl delete gatewayclass shared-gateway-class --ignore-not-found" }
+  ],
+  "teardown_commands": [
+    { "command": "kubectl delete gatewayclass shared-gateway-class --ignore-not-found" }
+  ],
+  "default_namespace": "default",
+  "validation": {
+    "description": "Check that the GatewayClass shared-gateway-class exists and has the correct controllerName",
+    "commands": [
+      {
+        "description": "GatewayClass shared-gateway-class exists",
+        "command": "kubectl get gatewayclass shared-gateway-class -o jsonpath='{.metadata.name}'",
+        "expected_output": "shared-gateway-class",
+        "match": "exact"
+      },
+      {
+        "description": "ControllerName matches example.com/gateway-controller",
+        "command": "kubectl get gatewayclass shared-gateway-class -o jsonpath='{.spec.controllerName}'",
+        "expected_output": "example.com/gateway-controller",
+        "match": "exact"
+      }
+    ]
+  }
+}

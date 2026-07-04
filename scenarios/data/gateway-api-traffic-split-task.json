@@ -1,0 +1,85 @@
+{
+  "id": "gateway-api-traffic-split-task",
+  "title": "Traffic Splitting with HTTPRoute",
+  "category": "Gateway API",
+  "difficulty": "Medium",
+  "type": "task",
+  "weight": 5,
+  "description": "## Traffic Splitting with HTTPRoute\n\nGateway API natively supports traffic splitting (canary routing) directly inside the `HTTPRoute` definition. Multiple backends can be declared under `backendRefs`, each with a distinct `weight` to control the share of traffic it receives.\n\n**Your task:**\n\nCreate an `HTTPRoute` named `canary-route` in the `gateway-lab` namespace that satisfies the following conditions:\n- Attaches to the parent Gateway `external-gateway` in the `gateway-lab` namespace.\n- Matches incoming traffic with path prefix `/api`.\n- Splits the traffic between two backend services:\n  - `api-service-v1` on port `8080` with a weight of `90`.\n  - `api-service-v2` on port `8080` with a weight of `10`.\n\n```bash\n# Verify your progress:\nkubectl get httproute canary-route -n gateway-lab -o yaml\n```",
+  "hints": [
+    {
+      "title": "Traffic splitting weights",
+      "body": "In HTTPRoute, under backendRefs, you can specify multiple backends with their respective weights.",
+      "command": "kubectl apply -f - <<'EOF'\napiVersion: gateway.networking.k8s.io/v1\nkind: HTTPRoute\nmetadata:\n  name: canary-route\n  namespace: gateway-lab\nspec:\n  parentRefs:\n  - name: external-gateway\n  rules:\n  - matches:\n    - path:\n        type: PathPrefix\n        value: /api\n    backendRefs:\n    - name: api-service-v1\n      port: 8080\n      weight: 90\n    - name: api-service-v2\n      port: 8080\n      weight: 10\nEOF"
+    }
+  ],
+  "setup_commands": [
+    { "command": "kubectl apply --server-side --force-conflicts -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.2.1/standard-install.yaml" },
+    { "command": "kubectl create namespace gateway-lab 2>/dev/null || true" },
+    { "command": "kubectl apply -f - <<'EOF'\napiVersion: gateway.networking.k8s.io/v1\nkind: GatewayClass\nmetadata:\n  name: shared-gateway-class\nspec:\n  controllerName: example.com/gateway-controller\nEOF" },
+    { "command": "kubectl apply -f - <<'EOF'\napiVersion: gateway.networking.k8s.io/v1\nkind: Gateway\nmetadata:\n  name: external-gateway\n  namespace: gateway-lab\nspec:\n  gatewayClassName: shared-gateway-class\n  listeners:\n  - name: http-listener\n    port: 80\n    protocol: HTTP\n    allowedRoutes:\n      namespaces:\n        from: Same\nEOF" },
+    { "command": "kubectl delete httproute canary-route -n gateway-lab --ignore-not-found" },
+    { "command": "kubectl create deployment api-service-v1 --image=nginx:alpine -n gateway-lab 2>/dev/null || true" },
+    { "command": "kubectl expose deployment api-service-v1 --name=api-service-v1 --port=8080 --target-port=80 -n gateway-lab 2>/dev/null || true" },
+    { "command": "kubectl create deployment api-service-v2 --image=nginx:alpine -n gateway-lab 2>/dev/null || true" },
+    { "command": "kubectl expose deployment api-service-v2 --name=api-service-v2 --port=8080 --target-port=80 -n gateway-lab 2>/dev/null || true" }
+  ],
+  "teardown_commands": [
+    { "command": "kubectl delete httproute canary-route -n gateway-lab --ignore-not-found" },
+    { "command": "kubectl delete service api-service-v1 -n gateway-lab --ignore-not-found" },
+    { "command": "kubectl delete service api-service-v2 -n gateway-lab --ignore-not-found" },
+    { "command": "kubectl delete deployment api-service-v1 -n gateway-lab --ignore-not-found" },
+    { "command": "kubectl delete deployment api-service-v2 -n gateway-lab --ignore-not-found" },
+    { "command": "kubectl delete gateway external-gateway -n gateway-lab --ignore-not-found" },
+    { "command": "kubectl delete gatewayclass shared-gateway-class --ignore-not-found" },
+    { "command": "kubectl delete namespace gateway-lab --ignore-not-found" }
+  ],
+  "default_namespace": "gateway-lab",
+  "validation": {
+    "description": "Check that the HTTPRoute canary-route has the correct traffic split weights",
+    "commands": [
+      {
+        "description": "HTTPRoute canary-route exists",
+        "command": "kubectl get httproute canary-route -n gateway-lab -o jsonpath='{.metadata.name}'",
+        "expected_output": "canary-route",
+        "match": "exact"
+      },
+      {
+        "description": "ParentRef name is external-gateway",
+        "command": "kubectl get httproute canary-route -n gateway-lab -o jsonpath='{.spec.parentRefs[0].name}'",
+        "expected_output": "external-gateway",
+        "match": "exact"
+      },
+      {
+        "description": "Match path value is /api",
+        "command": "kubectl get httproute canary-route -n gateway-lab -o jsonpath='{.spec.rules[0].matches[0].path.value}'",
+        "expected_output": "/api",
+        "match": "exact"
+      },
+      {
+        "description": "First backend service is api-service-v1",
+        "command": "kubectl get httproute canary-route -n gateway-lab -o jsonpath='{.spec.rules[0].backendRefs[0].name}'",
+        "expected_output": "api-service-v1",
+        "match": "exact"
+      },
+      {
+        "description": "First backend service weight is 90",
+        "command": "kubectl get httproute canary-route -n gateway-lab -o jsonpath='{.spec.rules[0].backendRefs[0].weight}'",
+        "expected_output": "90",
+        "match": "exact"
+      },
+      {
+        "description": "Second backend service is api-service-v2",
+        "command": "kubectl get httproute canary-route -n gateway-lab -o jsonpath='{.spec.rules[0].backendRefs[1].name}'",
+        "expected_output": "api-service-v2",
+        "match": "exact"
+      },
+      {
+        "description": "Second backend service weight is 10",
+        "command": "kubectl get httproute canary-route -n gateway-lab -o jsonpath='{.spec.rules[0].backendRefs[1].weight}'",
+        "expected_output": "10",
+        "match": "exact"
+      }
+    ]
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "id": "gateway-api-class-vs-gateway-mcq",
+  "title": "GatewayClass vs Gateway",
+  "category": "Gateway API",
+  "difficulty": "Easy",
+  "type": "mcq",
+  "weight": 3,
+  "description": "## GatewayClass vs Gateway\n\nGateway API defines separate `GatewayClass` and `Gateway` resources.\n\nWhat is the relationship between a `GatewayClass` and a `Gateway`?",
+  "options": [
+    { "id": "a", "text": "A GatewayClass acts as a namespace-scoped backup for a cluster-wide Gateway" },
+    { "id": "b", "text": "A Gateway references a GatewayClass via the spec.gatewayClassName field to inherit its controller configuration and behaviour" },
+    { "id": "c", "text": "A GatewayClass is generated automatically for each new Gateway resource created in the cluster" },
+    { "id": "d", "text": "Gateways and GatewayClasses are synonyms and can be used interchangeably" }
+  ],
+  "correct_option": "b",
+  "explanation": "Much like a `Pod` references a `RuntimeClass` or a `PersistentVolumeClaim` references a `StorageClass`, a `Gateway` references a `GatewayClass` via `spec.gatewayClassName`. The GatewayClass specifies the `controllerName` that should handle and provision the network infrastructure for that Gateway instance.",
+  "hints": [
+    {
+      "title": "Analogy to StorageClass",
+      "body": "Just as a StorageClass defines the provisioner and parameter template for a PV, a GatewayClass defines the controller implementation for a Gateway.",
+      "command": "kubectl explain gateway.spec.gatewayClassName"
+    }
+  ],
+  "setup_commands": [],
+  "teardown_commands": [],
+  "default_namespace": "default"
+}

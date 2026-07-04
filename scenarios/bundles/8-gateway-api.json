@@ -1,0 +1,21 @@
+{
+  "id": "8-gateway-api",
+  "name": "Gateway API",
+  "icon": "🚪",
+  "tagline": "Expressive, role-oriented, and extensible service routing with Kubernetes Gateway API",
+  "color": "#0d9488",
+  "colorDim": "rgba(13,148,136,0.12)",
+  "exam_minutes": 60,
+  "scenario_ids": [
+    "gateway-api-architecture-mcq",
+    "gateway-api-class-vs-gateway-mcq",
+    "gateway-api-reference-grant-mcq",
+    "gateway-api-httproute-filters-mcq",
+    "gateway-api-class-task",
+    "gateway-api-provision-gateway-task",
+    "gateway-api-httproute-basic-task",
+    "gateway-api-traffic-split-task",
+    "gateway-api-header-modifier-task",
+    "gateway-api-reference-grant-task"
+  ]
+}

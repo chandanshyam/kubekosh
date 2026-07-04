@@ -1,0 +1,69 @@
+{
+  "id": "gateway-api-httproute-basic-task",
+  "title": "Expose Service via HTTPRoute",
+  "category": "Gateway API",
+  "difficulty": "Easy",
+  "type": "task",
+  "weight": 4,
+  "description": "## Expose Service via HTTPRoute\n\nIn Gateway API, an `HTTPRoute` defines routing rules for HTTP traffic. It references a `Gateway` (its parent) and routes requests based on parameters like hostnames, paths, and headers to backend `Services`.\n\n**Your task:**\n\nCreate an `HTTPRoute` named `frontend-route` in the `gateway-lab` namespace that satisfies the following conditions:\n- Attaches to the parent Gateway `external-gateway` in the `gateway-lab` namespace.\n- Matches incoming traffic for the hostname `example.com`.\n- Routes all traffic (path prefix `/`) to the backend service `frontend-service` on port `80`.\n\n```bash\n# Verify your progress:\nkubectl get httproute frontend-route -n gateway-lab -o yaml\n```",
+  "hints": [
+    {
+      "title": "HTTPRoute structure",
+      "body": "An HTTPRoute uses spec.parentRefs to declare which Gateway it attaches to, spec.hostnames to specify domains, and spec.rules to define matches and backendRefs.",
+      "command": "kubectl apply -f - <<'EOF'\napiVersion: gateway.networking.k8s.io/v1\nkind: HTTPRoute\nmetadata:\n  name: frontend-route\n  namespace: gateway-lab\nspec:\n  parentRefs:\n  - name: external-gateway\n  hostnames:\n  - \"example.com\"\n  rules:\n  - matches:\n    - path:\n        type: PathPrefix\n        value: /\n    backendRefs:\n    - name: frontend-service\n      port: 80\nEOF"
+    }
+  ],
+  "setup_commands": [
+    { "command": "kubectl apply --server-side --force-conflicts -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.2.1/standard-install.yaml" },
+    { "command": "kubectl create namespace gateway-lab 2>/dev/null || true" },
+    { "command": "kubectl apply -f - <<'EOF'\napiVersion: gateway.networking.k8s.io/v1\nkind: GatewayClass\nmetadata:\n  name: shared-gateway-class\nspec:\n  controllerName: example.com/gateway-controller\nEOF" },
+    { "command": "kubectl apply -f - <<'EOF'\napiVersion: gateway.networking.k8s.io/v1\nkind: Gateway\nmetadata:\n  name: external-gateway\n  namespace: gateway-lab\nspec:\n  gatewayClassName: shared-gateway-class\n  listeners:\n  - name: http-listener\n    port: 80\n    protocol: HTTP\n    allowedRoutes:\n      namespaces:\n        from: Same\nEOF" },
+    { "command": "kubectl delete httproute frontend-route -n gateway-lab --ignore-not-found" },
+    { "command": "kubectl create deployment frontend-service --image=nginx:alpine -n gateway-lab 2>/dev/null || true" },
+    { "command": "kubectl expose deployment frontend-service --port=80 -n gateway-lab 2>/dev/null || true" }
+  ],
+  "teardown_commands": [
+    { "command": "kubectl delete httproute frontend-route -n gateway-lab --ignore-not-found" },
+    { "command": "kubectl delete service frontend-service -n gateway-lab --ignore-not-found" },
+    { "command": "kubectl delete deployment frontend-service -n gateway-lab --ignore-not-found" },
+    { "command": "kubectl delete gateway external-gateway -n gateway-lab --ignore-not-found" },
+    { "command": "kubectl delete gatewayclass shared-gateway-class --ignore-not-found" },
+    { "command": "kubectl delete namespace gateway-lab --ignore-not-found" }
+  ],
+  "default_namespace": "gateway-lab",
+  "validation": {
+    "description": "Check that the HTTPRoute frontend-route exists and routes traffic correctly",
+    "commands": [
+      {
+        "description": "HTTPRoute frontend-route exists",
+        "command": "kubectl get httproute frontend-route -n gateway-lab -o jsonpath='{.metadata.name}'",
+        "expected_output": "frontend-route",
+        "match": "exact"
+      },
+      {
+        "description": "ParentRef name is external-gateway",
+        "command": "kubectl get httproute frontend-route -n gateway-lab -o jsonpath='{.spec.parentRefs[0].name}'",
+        "expected_output": "external-gateway",
+        "match": "exact"
+      },
+      {
+        "description": "Hostname is example.com",
+        "command": "kubectl get httproute frontend-route -n gateway-lab -o jsonpath='{.spec.hostnames[0]}'",
+        "expected_output": "example.com",
+        "match": "exact"
+      },
+      {
+        "description": "BackendRef name is frontend-service",
+        "command": "kubectl get httproute frontend-route -n gateway-lab -o jsonpath='{.spec.rules[0].backendRefs[0].name}'",
+        "expected_output": "frontend-service",
+        "match": "exact"
+      },
+      {
+        "description": "BackendRef port is 80",
+        "command": "kubectl get httproute frontend-route -n gateway-lab -o jsonpath='{.spec.rules[0].backendRefs[0].port}'",
+        "expected_output": "80",
+        "match": "exact"
+      }
+    ]
+  }
+}

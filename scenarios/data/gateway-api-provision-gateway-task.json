@@ -1,0 +1,69 @@
+{
+  "id": "gateway-api-provision-gateway-task",
+  "title": "Provision a Gateway",
+  "category": "Gateway API",
+  "difficulty": "Easy",
+  "type": "task",
+  "weight": 4,
+  "description": "## Provision a Gateway\n\nA `Gateway` represents the instantiation of network infrastructure (like a load balancer or proxy) defined by a `GatewayClass`. It defines the entry points (listeners) where the gateway will accept incoming traffic.\n\n**Your task:**\n\nCreate a `Gateway` named `external-gateway` in the namespace `gateway-lab` that satisfies the following conditions:\n- Uses the `shared-gateway-class` GatewayClass.\n- Defines a single listener named `http-listener` on port `80` with the `HTTP` protocol.\n- Restricts route attachment to routes from the same namespace (`spec.listeners[*].allowedRoutes.namespaces.from` set to `Same`).\n\n```bash\n# Verify your progress:\nkubectl get gateway external-gateway -n gateway-lab -o yaml\n```",
+  "hints": [
+    {
+      "title": "Gateway structure",
+      "body": "A Gateway uses spec.gatewayClassName to associate with a GatewayClass, and spec.listeners to define the ports and protocols. Use namespaces.from: Same under allowedRoutes.",
+      "command": "kubectl apply -f - <<'EOF'\napiVersion: gateway.networking.k8s.io/v1\nkind: Gateway\nmetadata:\n  name: external-gateway\n  namespace: gateway-lab\nspec:\n  gatewayClassName: shared-gateway-class\n  listeners:\n  - name: http-listener\n    port: 80\n    protocol: HTTP\n    allowedRoutes:\n      namespaces:\n        from: Same\nEOF"
+    }
+  ],
+  "setup_commands": [
+    { "command": "kubectl apply --server-side --force-conflicts -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.2.1/standard-install.yaml" },
+    { "command": "kubectl create namespace gateway-lab 2>/dev/null || true" },
+    { "command": "kubectl delete gateway external-gateway -n gateway-lab --ignore-not-found" },
+    { "command": "kubectl apply -f - <<'EOF'\napiVersion: gateway.networking.k8s.io/v1\nkind: GatewayClass\nmetadata:\n  name: shared-gateway-class\nspec:\n  controllerName: example.com/gateway-controller\nEOF" }
+  ],
+  "teardown_commands": [
+    { "command": "kubectl delete gateway external-gateway -n gateway-lab --ignore-not-found" },
+    { "command": "kubectl delete gatewayclass shared-gateway-class --ignore-not-found" },
+    { "command": "kubectl delete namespace gateway-lab --ignore-not-found" }
+  ],
+  "default_namespace": "gateway-lab",
+  "validation": {
+    "description": "Check that the Gateway external-gateway is configured correctly in namespace gateway-lab",
+    "commands": [
+      {
+        "description": "Gateway external-gateway exists",
+        "command": "kubectl get gateway external-gateway -n gateway-lab -o jsonpath='{.metadata.name}'",
+        "expected_output": "external-gateway",
+        "match": "exact"
+      },
+      {
+        "description": "gatewayClassName is shared-gateway-class",
+        "command": "kubectl get gateway external-gateway -n gateway-lab -o jsonpath='{.spec.gatewayClassName}'",
+        "expected_output": "shared-gateway-class",
+        "match": "exact"
+      },
+      {
+        "description": "Listener port is 80",
+        "command": "kubectl get gateway external-gateway -n gateway-lab -o jsonpath='{.spec.listeners[0].port}'",
+        "expected_output": "80",
+        "match": "exact"
+      },
+      {
+        "description": "Listener protocol is HTTP",
+        "command": "kubectl get gateway external-gateway -n gateway-lab -o jsonpath='{.spec.listeners[0].protocol}'",
+        "expected_output": "HTTP",
+        "match": "exact"
+      },
+      {
+        "description": "Listener name is http-listener",
+        "command": "kubectl get gateway external-gateway -n gateway-lab -o jsonpath='{.spec.listeners[0].name}'",
+        "expected_output": "http-listener",
+        "match": "exact"
+      },
+      {
+        "description": "AllowedRoutes namespaces from is Same",
+        "command": "kubectl get gateway external-gateway -n gateway-lab -o jsonpath='{.spec.listeners[0].allowedRoutes.namespaces.from}'",
+        "expected_output": "Same",
+        "match": "exact"
+      }
+    ]
+  }
+}

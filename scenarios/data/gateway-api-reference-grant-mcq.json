@@ -1,0 +1,27 @@
+{
+  "id": "gateway-api-reference-grant-mcq",
+  "title": "Gateway API Cross-Namespace Security",
+  "category": "Gateway API",
+  "difficulty": "Medium",
+  "type": "mcq",
+  "weight": 3,
+  "description": "## Gateway API Cross-Namespace Security\n\nGateway API enforces namespace boundaries by default to prevent unauthorized cross-namespace traffic routing and resource access.\n\nWhat is the primary purpose of the `ReferenceGrant` resource in Kubernetes Gateway API?",
+  "options": [
+    { "id": "a", "text": "To grant administrative cluster-wide permissions for managing GatewayClasses" },
+    { "id": "b", "text": "To explicitly authorize cross-namespace references, allowing a Gateway or Route in one namespace to bind to or reference a resource (like a Service or Secret) in another namespace" },
+    { "id": "c", "text": "To configure a secure TLS session between the client and the Gateway's listeners" },
+    { "id": "d", "text": "To automatically replicate Kubernetes Secrets containing TLS certificates across all namespaces" }
+  ],
+  "correct_option": "b",
+  "explanation": "`ReferenceGrant` is a namespace-scoped resource designed to establish secure cross-namespace boundaries. For example, if a Gateway in the `infra` namespace wants to route traffic to an `HTTPRoute` in the `dev` namespace, or if an `HTTPRoute` in the `dev` namespace wants to forward traffic to a backend `Service` in the `shared-services` namespace, a `ReferenceGrant` must be created in the target namespace to explicitly authorize that cross-namespace reference. Without it, the reference is ignored by the controller.",
+  "hints": [
+    {
+      "title": "Cross-Namespace Boundaries",
+      "body": "By default, references across namespaces are disallowed for security. ReferenceGrant is the handshake mechanism that permits them.",
+      "command": "kubectl explain referencegrant"
+    }
+  ],
+  "setup_commands": [],
+  "teardown_commands": [],
+  "default_namespace": "default"
+}

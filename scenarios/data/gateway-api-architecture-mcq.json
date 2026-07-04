@@ -1,0 +1,27 @@
+{
+  "id": "gateway-api-architecture-mcq",
+  "title": "Gateway API Role-Oriented Design",
+  "category": "Gateway API",
+  "difficulty": "Easy",
+  "type": "mcq",
+  "weight": 3,
+  "description": "## Gateway API Role-Oriented Design\n\nKubernetes Gateway API is designed to be role-oriented, splitting configuration across different API resources to match organizational roles.\n\nWhich of the following resources is typically managed by the **Infrastructure Provider** or **Cluster Operator** to define the template and controller for gateways, rather than by individual Application Developers?",
+  "options": [
+    { "id": "a", "text": "HTTPRoute" },
+    { "id": "b", "text": "GatewayClass" },
+    { "id": "c", "text": "Gateway" },
+    { "id": "d", "text": "ReferenceGrant" }
+  ],
+  "correct_option": "b",
+  "explanation": "`GatewayClass` is cluster-scoped and managed by the Infrastructure Provider/Cluster Operator. It defines a template of configurations (like the controller implementation: Envoy, Traefik, Istio, etc.) that can be instantiated. `Gateway` is usually managed by the Cluster Operator to define entrypoints, while `HTTPRoute` is managed by Application Developers to route traffic to their applications.",
+  "hints": [
+    {
+      "title": "Role division in Gateway API",
+      "body": "GatewayClass defines the template/implementation. Gateway defines the instance/entrypoint. HTTPRoute defines routing rules.",
+      "command": "kubectl get gatewayclass"
+    }
+  ],
+  "setup_commands": [],
+  "teardown_commands": [],
+  "default_namespace": "default"
+}

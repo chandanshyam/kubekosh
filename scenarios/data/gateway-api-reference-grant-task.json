@@ -1,0 +1,96 @@
+{
+  "id": "gateway-api-reference-grant-task",
+  "title": "Cross-Namespace Routing via ReferenceGrant",
+  "category": "Gateway API",
+  "difficulty": "Hard",
+  "type": "task",
+  "weight": 6,
+  "description": "## Cross-Namespace Routing via ReferenceGrant\n\nFor security reasons, Gateway API disallows cross-namespace resource references by default. To enable cross-namespace references (such as an `HTTPRoute` routing to a backend `Service` in a different namespace, or a `Gateway` referencing a `Secret` in a different namespace), a `ReferenceGrant` must be created in the target namespace to explicitly permit the access.\n\n**Your task:**\n\nConfigure cross-namespace routing from the `gateway-infra` namespace to the `gateway-apps` namespace:\n1. Create an `HTTPRoute` named `cross-ns-route` in the `gateway-infra` namespace that:\n   - Attaches to the parent Gateway `external-gateway` in the `gateway-infra` namespace.\n   - Routes all traffic (path prefix `/`) to the backend service `backend-service` in the `gateway-apps` namespace on port `80`.\n2. Create a `ReferenceGrant` named `allow-cross-ns` in the `gateway-apps` namespace that authorizes HTTPRoutes from the `gateway-infra` namespace to reference Services in the `gateway-apps` namespace.\n\n```bash\n# Verify your progress:\nkubectl get referencegrant allow-cross-ns -n gateway-apps -o yaml\nkubectl get httproute cross-ns-route -n gateway-infra -o yaml\n```",
+  "hints": [
+    {
+      "title": "Cross-namespace HTTPRoute definition",
+      "body": "The HTTPRoute should reside in gateway-infra. Under spec.rules[].backendRefs[0], specify namespace: gateway-apps alongside the service name and port.",
+      "command": "kubectl apply -f - <<'EOF'\napiVersion: gateway.networking.k8s.io/v1\nkind: HTTPRoute\nmetadata:\n  name: cross-ns-route\n  namespace: gateway-infra\nspec:\n  parentRefs:\n  - name: external-gateway\n  rules:\n  - matches:\n    - path:\n        type: PathPrefix\n        value: /\n    backendRefs:\n    - name: backend-service\n      namespace: gateway-apps\n      port: 80\nEOF"
+    },
+    {
+      "title": "ReferenceGrant definition",
+      "body": "The ReferenceGrant must reside in the target namespace (gateway-apps). It defines spec.from (describing who wants to reference: Group gateway.networking.k8s.io, Kind HTTPRoute, Namespace gateway-infra) and spec.to (describing what resource is referenced: Group \"\" (core), Kind Service). Note: ReferenceGrant API version is gateway.networking.k8s.io/v1beta1.",
+      "command": "kubectl apply -f - <<'EOF'\napiVersion: gateway.networking.k8s.io/v1beta1\nkind: ReferenceGrant\nmetadata:\n  name: allow-cross-ns\n  namespace: gateway-apps\nspec:\n  from:\n  - group: gateway.networking.k8s.io\n    kind: HTTPRoute\n    namespace: gateway-infra\n  to:\n  - group: \"\"\n    kind: Service\nEOF"
+    }
+  ],
+  "setup_commands": [
+    { "command": "kubectl apply --server-side --force-conflicts -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.2.1/standard-install.yaml" },
+    { "command": "kubectl create namespace gateway-infra 2>/dev/null || true" },
+    { "command": "kubectl create namespace gateway-apps 2>/dev/null || true" },
+    { "command": "kubectl apply -f - <<'EOF'\napiVersion: gateway.networking.k8s.io/v1\nkind: GatewayClass\nmetadata:\n  name: shared-gateway-class\nspec:\n  controllerName: example.com/gateway-controller\nEOF" },
+    { "command": "kubectl apply -f - <<'EOF'\napiVersion: gateway.networking.k8s.io/v1\nkind: Gateway\nmetadata:\n  name: external-gateway\n  namespace: gateway-infra\nspec:\n  gatewayClassName: shared-gateway-class\n  listeners:\n  - name: http-listener\n    port: 80\n    protocol: HTTP\n    allowedRoutes:\n      namespaces:\n        from: All\nEOF" },
+    { "command": "kubectl delete httproute cross-ns-route -n gateway-infra --ignore-not-found" },
+    { "command": "kubectl delete referencegrant allow-cross-ns -n gateway-apps --ignore-not-found" },
+    { "command": "kubectl create deployment backend-service --image=nginx:alpine -n gateway-apps 2>/dev/null || true" },
+    { "command": "kubectl expose deployment backend-service --port=80 -n gateway-apps 2>/dev/null || true" }
+  ],
+  "teardown_commands": [
+    { "command": "kubectl delete httproute cross-ns-route -n gateway-infra --ignore-not-found" },
+    { "command": "kubectl delete referencegrant allow-cross-ns -n gateway-apps --ignore-not-found" },
+    { "command": "kubectl delete service backend-service -n gateway-apps --ignore-not-found" },
+    { "command": "kubectl delete deployment backend-service -n gateway-apps --ignore-not-found" },
+    { "command": "kubectl delete gateway external-gateway -n gateway-infra --ignore-not-found" },
+    { "command": "kubectl delete gatewayclass shared-gateway-class --ignore-not-found" },
+    { "command": "kubectl delete namespace gateway-infra --ignore-not-found" },
+    { "command": "kubectl delete namespace gateway-apps --ignore-not-found" }
+  ],
+  "default_namespace": "gateway-infra",
+  "validation": {
+    "description": "Check that the HTTPRoute in gateway-infra and ReferenceGrant in gateway-apps are configured correctly",
+    "commands": [
+      {
+        "description": "HTTPRoute cross-ns-route exists in gateway-infra namespace",
+        "command": "kubectl get httproute cross-ns-route -n gateway-infra -o jsonpath='{.metadata.name}'",
+        "expected_output": "cross-ns-route",
+        "match": "exact"
+      },
+      {
+        "description": "BackendRef namespace is gateway-apps",
+        "command": "kubectl get httproute cross-ns-route -n gateway-infra -o jsonpath='{.spec.rules[0].backendRefs[0].namespace}'",
+        "expected_output": "gateway-apps",
+        "match": "exact"
+      },
+      {
+        "description": "BackendRef name is backend-service",
+        "command": "kubectl get httproute cross-ns-route -n gateway-infra -o jsonpath='{.spec.rules[0].backendRefs[0].name}'",
+        "expected_output": "backend-service",
+        "match": "exact"
+      },
+      {
+        "description": "ReferenceGrant allow-cross-ns exists in gateway-apps namespace",
+        "command": "kubectl get referencegrant allow-cross-ns -n gateway-apps -o jsonpath='{.metadata.name}'",
+        "expected_output": "allow-cross-ns",
+        "match": "exact"
+      },
+      {
+        "description": "ReferenceGrant from group is gateway.networking.k8s.io",
+        "command": "kubectl get referencegrant allow-cross-ns -n gateway-apps -o jsonpath='{.spec.from[0].group}'",
+        "expected_output": "gateway.networking.k8s.io",
+        "match": "exact"
+      },
+      {
+        "description": "ReferenceGrant from kind is HTTPRoute",
+        "command": "kubectl get referencegrant allow-cross-ns -n gateway-apps -o jsonpath='{.spec.from[0].kind}'",
+        "expected_output": "HTTPRoute",
+        "match": "exact"
+      },
+      {
+        "description": "ReferenceGrant from namespace is gateway-infra",
+        "command": "kubectl get referencegrant allow-cross-ns -n gateway-apps -o jsonpath='{.spec.from[0].namespace}'",
+        "expected_output": "gateway-infra",
+        "match": "exact"
+      },
+      {
+        "description": "ReferenceGrant to kind is Service",
+        "command": "kubectl get referencegrant allow-cross-ns -n gateway-apps -o jsonpath='{.spec.to[0].kind}'",
+        "expected_output": "Service",
+        "match": "exact"
+      }
+    ]
+  }
+}

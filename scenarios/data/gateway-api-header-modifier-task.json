@@ -1,0 +1,75 @@
+{
+  "id": "gateway-api-header-modifier-task",
+  "title": "Request Header Modification",
+  "category": "Gateway API",
+  "difficulty": "Medium",
+  "type": "task",
+  "weight": 5,
+  "description": "## Request Header Modification\n\nGateway API defines standard HTTP filters to modify requests or responses without needing custom ingress annotations. The `RequestHeaderModifier` filter allows adding, setting, or removing headers before forwarding the request to the backend service.\n\n**Your task:**\n\nCreate an `HTTPRoute` named `headers-route` in the `gateway-lab` namespace that satisfies the following conditions:\n- Attaches to the parent Gateway `external-gateway` in the `gateway-lab` namespace.\n- Matches incoming traffic with path prefix `/headers`.\n- Applies a `RequestHeaderModifier` filter to set or add the HTTP header `X-Gateway-Route` with the value `external-route`.\n- Routes the modified traffic to the backend service `headers-service` on port `80`.\n\n```bash\n# Verify your progress:\nkubectl get httproute headers-route -n gateway-lab -o yaml\n```",
+  "hints": [
+    {
+      "title": "HTTPRoute with filters",
+      "body": "In HTTPRoute, filters can be defined under spec.rules[].filters. Use a filter with type: RequestHeaderModifier and configure the requestHeaderModifier block with set (or add).",
+      "command": "kubectl apply -f - <<'EOF'\napiVersion: gateway.networking.k8s.io/v1\nkind: HTTPRoute\nmetadata:\n  name: headers-route\n  namespace: gateway-lab\nspec:\n  parentRefs:\n  - name: external-gateway\n  rules:\n  - matches:\n    - path:\n        type: PathPrefix\n        value: /headers\n    filters:\n    - type: RequestHeaderModifier\n      requestHeaderModifier:\n        set:\n        - name: X-Gateway-Route\n          value: external-route\n    backendRefs:\n    - name: headers-service\n      port: 80\nEOF"
+    }
+  ],
+  "setup_commands": [
+    { "command": "kubectl apply --server-side --force-conflicts -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.2.1/standard-install.yaml" },
+    { "command": "kubectl create namespace gateway-lab 2>/dev/null || true" },
+    { "command": "kubectl apply -f - <<'EOF'\napiVersion: gateway.networking.k8s.io/v1\nkind: GatewayClass\nmetadata:\n  name: shared-gateway-class\nspec:\n  controllerName: example.com/gateway-controller\nEOF" },
+    { "command": "kubectl apply -f - <<'EOF'\napiVersion: gateway.networking.k8s.io/v1\nkind: Gateway\nmetadata:\n  name: external-gateway\n  namespace: gateway-lab\nspec:\n  gatewayClassName: shared-gateway-class\n  listeners:\n  - name: http-listener\n    port: 80\n    protocol: HTTP\n    allowedRoutes:\n      namespaces:\n        from: Same\nEOF" },
+    { "command": "kubectl delete httproute headers-route -n gateway-lab --ignore-not-found" },
+    { "command": "kubectl create deployment headers-service --image=nginx:alpine -n gateway-lab 2>/dev/null || true" },
+    { "command": "kubectl expose deployment headers-service --port=80 -n gateway-lab 2>/dev/null || true" }
+  ],
+  "teardown_commands": [
+    { "command": "kubectl delete httproute headers-route -n gateway-lab --ignore-not-found" },
+    { "command": "kubectl delete service headers-service -n gateway-lab --ignore-not-found" },
+    { "command": "kubectl delete deployment headers-service -n gateway-lab --ignore-not-found" },
+    { "command": "kubectl delete gateway external-gateway -n gateway-lab --ignore-not-found" },
+    { "command": "kubectl delete gatewayclass shared-gateway-class --ignore-not-found" },
+    { "command": "kubectl delete namespace gateway-lab --ignore-not-found" }
+  ],
+  "default_namespace": "gateway-lab",
+  "validation": {
+    "description": "Check that the HTTPRoute headers-route is configured with the header modifier filter",
+    "commands": [
+      {
+        "description": "HTTPRoute headers-route exists",
+        "command": "kubectl get httproute headers-route -n gateway-lab -o jsonpath='{.metadata.name}'",
+        "expected_output": "headers-route",
+        "match": "exact"
+      },
+      {
+        "description": "Match path value is /headers",
+        "command": "kubectl get httproute headers-route -n gateway-lab -o jsonpath='{.spec.rules[0].matches[0].path.value}'",
+        "expected_output": "/headers",
+        "match": "exact"
+      },
+      {
+        "description": "Filter type is RequestHeaderModifier",
+        "command": "kubectl get httproute headers-route -n gateway-lab -o jsonpath='{.spec.rules[0].filters[0].type}'",
+        "expected_output": "RequestHeaderModifier",
+        "match": "exact"
+      },
+      {
+        "description": "Filter sets/adds the X-Gateway-Route header",
+        "command": "kubectl get httproute headers-route -n gateway-lab -o jsonpath='{.spec.rules[0].filters[0].requestHeaderModifier}'",
+        "expected_output": "X-Gateway-Route",
+        "match": "contains"
+      },
+      {
+        "description": "Filter sets/adds the header value to external-route",
+        "command": "kubectl get httproute headers-route -n gateway-lab -o jsonpath='{.spec.rules[0].filters[0].requestHeaderModifier}'",
+        "expected_output": "external-route",
+        "match": "contains"
+      },
+      {
+        "description": "Backend service is headers-service on port 80",
+        "command": "kubectl get httproute headers-route -n gateway-lab -o jsonpath='{.spec.rules[0].backendRefs[0].name}'",
+        "expected_output": "headers-service",
+        "match": "exact"
+      }
+    ]
+  }
+}

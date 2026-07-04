@@ -1,0 +1,27 @@
+{
+  "id": "gateway-api-httproute-filters-mcq",
+  "title": "Gateway API HTTPRoute Filters",
+  "category": "Gateway API",
+  "difficulty": "Medium",
+  "type": "mcq",
+  "weight": 3,
+  "description": "## Gateway API HTTPRoute Filters\n\nHTTPRoute resources in Gateway API support inline *filters* to manipulate traffic as it passes through the Gateway, eliminating the need for vendor-specific annotations.\n\nWhich filter type is used to return an HTTP redirect response (e.g., `301 Moved Permanently` or `302 Found`) directly to the client rather than forwarding the request to a backend service?",
+  "options": [
+    { "id": "a", "text": "URLRewrite" },
+    { "id": "b", "text": "RequestHeaderModifier" },
+    { "id": "c", "text": "RequestRedirect" },
+    { "id": "d", "text": "RequestMirror" }
+  ],
+  "correct_option": "c",
+  "explanation": "The `RequestRedirect` filter returns an HTTP redirect response (like 301 or 302) directly to the client, modifying fields like scheme, hostname, port, or status code. On the other hand, the `URLRewrite` filter modifies the path or host header *before* forwarding the request to the backend service, so the client is unaware of the rewrite and no redirect response is sent to the browser.",
+  "hints": [
+    {
+      "title": "Redirect vs Rewrite",
+      "body": "A redirect instructs the client's browser to navigate to a new URL. A rewrite transparently changes the destination path on the server-side.",
+      "command": "kubectl explain httproute.spec.rules.filters"
+    }
+  ],
+  "setup_commands": [],
+  "teardown_commands": [],
+  "default_namespace": "default"
+}
