@@ -1,0 +1,21 @@
+{
+  "id": "5-istio",
+  "name": "Istio Service Mesh",
+  "icon": "🕸️",
+  "tagline": "Traffic management, security, and observability with Istio",
+  "color": "#7c3aed",
+  "colorDim": "rgba(124,58,237,0.12)",
+  "exam_minutes": 60,
+  "scenario_ids": [
+    "istio-architecture-mcq",
+    "istio-traffic-management-mcq",
+    "istio-mtls-mcq",
+    "istio-gateway-mcq",
+    "istio-sidecar-injection-task",
+    "istio-virtualservice-canary-task",
+    "istio-fault-injection-task",
+    "istio-peerauthentication-strict-task",
+    "istio-circuit-breaker-task",
+    "istio-authorizationpolicy-deny-task"
+  ]
+}

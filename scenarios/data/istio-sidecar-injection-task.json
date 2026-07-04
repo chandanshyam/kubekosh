@@ -1,0 +1,45 @@
+{
+  "id": "istio-sidecar-injection-task",
+  "title": "Enable Istio Sidecar Injection",
+  "category": "Istio",
+  "difficulty": "Easy",
+  "type": "task",
+  "weight": 4,
+  "description": "## Enable Istio Sidecar Injection\n\nFor a pod to join the Istio mesh, its namespace must have automatic sidecar injection enabled. Istio then automatically injects the `istio-proxy` (Envoy) container alongside every new pod in that namespace.\n\n**Your task:**\n\nCreate a namespace called `mesh-app` and label it so that Istio automatically injects sidecars into all pods deployed there.\n\n```bash\n# Verify:\nkubectl get namespace mesh-app --show-labels\n```",
+  "hints": [
+    {
+      "title": "The sidecar injection label",
+      "body": "Istio watches for the label `istio-injection=enabled` on a namespace. When present, the mutating webhook automatically adds the istio-proxy container to new pods.",
+      "command": "kubectl label namespace mesh-app istio-injection=enabled"
+    },
+    {
+      "title": "Full command sequence",
+      "body": "First create the namespace, then apply the label in one or two steps.",
+      "command": "kubectl create namespace mesh-app && kubectl label namespace mesh-app istio-injection=enabled"
+    }
+  ],
+  "setup_commands": [
+    { "command": "kubectl delete namespace mesh-app --ignore-not-found" }
+  ],
+  "teardown_commands": [
+    { "command": "kubectl delete namespace mesh-app --ignore-not-found" }
+  ],
+  "default_namespace": "default",
+  "validation": {
+    "description": "Check that namespace mesh-app exists and has the sidecar injection label",
+    "commands": [
+      {
+        "description": "namespace mesh-app exists",
+        "command": "kubectl get namespace mesh-app -o jsonpath='{.metadata.name}'",
+        "expected_output": "mesh-app",
+        "match": "exact"
+      },
+      {
+        "description": "istio-injection=enabled label is present",
+        "command": "kubectl get namespace mesh-app -o jsonpath='{.metadata.labels.istio-injection}'",
+        "expected_output": "enabled",
+        "match": "exact"
+      }
+    ]
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "id": "istio-traffic-management-mcq",
+  "title": "VirtualService vs DestinationRule",
+  "category": "Istio",
+  "difficulty": "Medium",
+  "type": "mcq",
+  "weight": 4,
+  "description": "## VirtualService vs DestinationRule\n\nTwo of the most important Istio traffic management resources are `VirtualService` and `DestinationRule`.\n\nWhich statement **best** describes their respective roles?",
+  "options": [
+    { "id": "a", "text": "VirtualService defines subsets of a service; DestinationRule defines how to route to those subsets" },
+    { "id": "b", "text": "VirtualService defines routing rules (how traffic flows); DestinationRule defines policies applied to traffic after routing (subsets, load balancing, TLS)" },
+    { "id": "c", "text": "VirtualService controls mTLS between pods; DestinationRule controls circuit breaking" },
+    { "id": "d", "text": "Both resources are interchangeable; you only need one at a time" }
+  ],
+  "correct_option": "b",
+  "explanation": "A VirtualService attaches routing rules to a host — it decides *where* traffic goes (weighted routing, retries, fault injection, header matching). A DestinationRule defines policies applied *after* routing: subsets (used to target specific pod versions), load balancing algorithm, connection pool settings, outlier detection, and TLS mode. They work together: VirtualService references subsets that DestinationRule defines.",
+  "hints": [
+    {
+      "title": "Think of it as two layers",
+      "body": "VirtualService = 'route this traffic here'. DestinationRule = 'when traffic reaches that destination, apply these policies'.",
+      "command": "kubectl get virtualservices,destinationrules -A"
+    }
+  ],
+  "setup_commands": [],
+  "teardown_commands": [],
+  "default_namespace": "default"
+}

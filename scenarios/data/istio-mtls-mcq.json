@@ -1,0 +1,27 @@
+{
+  "id": "istio-mtls-mcq",
+  "title": "Istio mTLS Modes",
+  "category": "Istio",
+  "difficulty": "Medium",
+  "type": "mcq",
+  "weight": 4,
+  "description": "## Istio mTLS Modes\n\nIstio uses `PeerAuthentication` to configure mutual TLS (mTLS) between services. There are two relevant modes: `STRICT` and `PERMISSIVE`.\n\nYou have a legacy service (no sidecar) that needs to call a new mesh-enrolled service. Which mTLS mode should you set on the **destination** service to allow both plain-text and mTLS traffic simultaneously during migration?",
+  "options": [
+    { "id": "a", "text": "STRICT — enforces mTLS for all inbound traffic" },
+    { "id": "b", "text": "DISABLE — turns off mTLS entirely" },
+    { "id": "c", "text": "PERMISSIVE — accepts both mTLS and plain-text traffic" },
+    { "id": "d", "text": "AUTO — automatically negotiates based on client capability" }
+  ],
+  "correct_option": "c",
+  "explanation": "PERMISSIVE mode allows the proxy to accept both mTLS-encrypted traffic (from sidecars) and plain-text traffic (from non-mesh clients). This is the standard migration strategy: set the destination to PERMISSIVE, onboard all clients into the mesh, then switch to STRICT. STRICT rejects plain-text. DISABLE turns mTLS off completely. AUTO is not a valid Istio PeerAuthentication mode.",
+  "hints": [
+    {
+      "title": "PeerAuthentication resource",
+      "body": "Apply a PeerAuthentication in the destination namespace with mtls.mode: PERMISSIVE to allow both traffic types.",
+      "command": "kubectl get peerauthentication -A"
+    }
+  ],
+  "setup_commands": [],
+  "teardown_commands": [],
+  "default_namespace": "default"
+}

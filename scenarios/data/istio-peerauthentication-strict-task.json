@@ -1,0 +1,42 @@
+{
+  "id": "istio-peerauthentication-strict-task",
+  "title": "Enforce Strict mTLS with PeerAuthentication",
+  "category": "Istio",
+  "difficulty": "Medium",
+  "type": "task",
+  "weight": 5,
+  "description": "## Enforce Strict mTLS with PeerAuthentication\n\nOnce all services in a namespace are enrolled in the mesh, you should switch from `PERMISSIVE` to `STRICT` mTLS to reject any plain-text traffic and ensure all communication is encrypted.\n\n**Your task:**\n\nCreate a `PeerAuthentication` resource named `default` in the `secure-ns` namespace that enforces **STRICT** mTLS for all workloads in that namespace.\n\n```bash\n# Verify:\nkubectl get peerauthentication default -n secure-ns -o jsonpath='{.spec.mtls.mode}'\n```",
+  "hints": [
+    {
+      "title": "PeerAuthentication resource structure",
+      "body": "Apply a PeerAuthentication in the target namespace. Omitting a selector makes it namespace-wide. Set spec.mtls.mode to STRICT.",
+      "command": "kubectl apply -f - <<EOF\napiVersion: security.istio.io/v1beta1\nkind: PeerAuthentication\nmetadata:\n  name: default\n  namespace: secure-ns\nspec:\n  mtls:\n    mode: STRICT\nEOF"
+    }
+  ],
+  "setup_commands": [
+    { "command": "kubectl create namespace secure-ns 2>/dev/null || true" },
+    { "command": "kubectl delete peerauthentication default -n secure-ns --ignore-not-found" }
+  ],
+  "teardown_commands": [
+    { "command": "kubectl delete peerauthentication default -n secure-ns --ignore-not-found" },
+    { "command": "kubectl delete namespace secure-ns --ignore-not-found" }
+  ],
+  "default_namespace": "secure-ns",
+  "validation": {
+    "description": "Check that the PeerAuthentication enforces STRICT mTLS in secure-ns",
+    "commands": [
+      {
+        "description": "PeerAuthentication default exists in secure-ns",
+        "command": "kubectl get peerauthentication default -n secure-ns -o jsonpath='{.metadata.name}'",
+        "expected_output": "default",
+        "match": "exact"
+      },
+      {
+        "description": "mTLS mode is STRICT",
+        "command": "kubectl get peerauthentication default -n secure-ns -o jsonpath='{.spec.mtls.mode}'",
+        "expected_output": "STRICT",
+        "match": "exact"
+      }
+    ]
+  }
+}

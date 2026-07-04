@@ -1,0 +1,27 @@
+{
+  "id": "istio-architecture-mcq",
+  "title": "Istio Architecture Overview",
+  "category": "Istio",
+  "difficulty": "Easy",
+  "type": "mcq",
+  "weight": 3,
+  "description": "## Istio Architecture Overview\n\nIstio has two logical planes: the **control plane** and the **data plane**.\n\nWhich component acts as the **data plane** in an Istio service mesh?",
+  "options": [
+    { "id": "a", "text": "istiod — manages traffic policies and distributes configuration" },
+    { "id": "b", "text": "Envoy sidecar proxies injected alongside each application pod" },
+    { "id": "c", "text": "Pilot — the legacy standalone traffic management component" },
+    { "id": "d", "text": "Galley — validates and distributes Istio configuration" }
+  ],
+  "correct_option": "b",
+  "explanation": "The data plane consists of Envoy sidecar proxies (istio-proxy containers) injected into every application pod. They intercept and control all inbound/outbound traffic. The control plane (istiod) configures these proxies via the xDS API. Pilot, Mixer, and Galley were legacy standalone components merged into istiod in Istio 1.5+.",
+  "hints": [
+    {
+      "title": "Data plane vs control plane",
+      "body": "The data plane handles actual packet forwarding (Envoy proxies). The control plane (istiod) programs the proxies with routing rules, certificates, and service discovery.",
+      "command": "kubectl get pods -n istio-system"
+    }
+  ],
+  "setup_commands": [],
+  "teardown_commands": [],
+  "default_namespace": "default"
+}

@@ -1,0 +1,48 @@
+{
+  "id": "istio-authorizationpolicy-deny-task",
+  "title": "Deny External Traffic with AuthorizationPolicy",
+  "category": "Istio",
+  "difficulty": "Hard",
+  "type": "task",
+  "weight": 7,
+  "description": "## Deny External Traffic with AuthorizationPolicy\n\nIstio `AuthorizationPolicy` provides fine-grained access control between services. A common pattern is to allow only in-mesh traffic (services with an Istio-issued identity) to reach sensitive workloads.\n\n**Your task:**\n\nCreate an `AuthorizationPolicy` named `deny-external` in the `secure-ns` namespace that:\n- **Denies all requests** that do **not** originate from within the `secure-ns` namespace\n- Uses `action: DENY` with a source `notNamespaces` rule matching anything outside `secure-ns`\n\nThe policy must apply to **all workloads** in `secure-ns` (no selector).\n\n```bash\n# Verify:\nkubectl get authorizationpolicy deny-external -n secure-ns -o jsonpath='{.spec.action}'\n```",
+  "hints": [
+    {
+      "title": "AuthorizationPolicy with DENY action",
+      "body": "Use action: DENY with a rules[].from[].source.notNamespaces field. This denies any request whose source namespace is not in the allow-list.",
+      "command": "kubectl apply -f - <<EOF\napiVersion: security.istio.io/v1beta1\nkind: AuthorizationPolicy\nmetadata:\n  name: deny-external\n  namespace: secure-ns\nspec:\n  action: DENY\n  rules:\n  - from:\n    - source:\n        notNamespaces: [\"secure-ns\"]\nEOF"
+    }
+  ],
+  "setup_commands": [
+    { "command": "kubectl create namespace secure-ns 2>/dev/null || true" },
+    { "command": "kubectl delete authorizationpolicy deny-external -n secure-ns --ignore-not-found" }
+  ],
+  "teardown_commands": [
+    { "command": "kubectl delete authorizationpolicy deny-external -n secure-ns --ignore-not-found" },
+    { "command": "kubectl delete namespace secure-ns --ignore-not-found" }
+  ],
+  "default_namespace": "secure-ns",
+  "validation": {
+    "description": "Check that the AuthorizationPolicy exists with DENY action and notNamespaces rule",
+    "commands": [
+      {
+        "description": "AuthorizationPolicy deny-external exists in secure-ns",
+        "command": "kubectl get authorizationpolicy deny-external -n secure-ns -o jsonpath='{.metadata.name}'",
+        "expected_output": "deny-external",
+        "match": "exact"
+      },
+      {
+        "description": "action is DENY",
+        "command": "kubectl get authorizationpolicy deny-external -n secure-ns -o jsonpath='{.spec.action}'",
+        "expected_output": "DENY",
+        "match": "exact"
+      },
+      {
+        "description": "notNamespaces rule references secure-ns",
+        "command": "kubectl get authorizationpolicy deny-external -n secure-ns -o jsonpath='{.spec.rules[0].from[0].source.notNamespaces[0]}'",
+        "expected_output": "secure-ns",
+        "match": "exact"
+      }
+    ]
+  }
+}

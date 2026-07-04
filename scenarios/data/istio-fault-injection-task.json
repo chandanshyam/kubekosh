@@ -1,0 +1,44 @@
+{
+  "id": "istio-fault-injection-task",
+  "title": "Inject an HTTP Fault with VirtualService",
+  "category": "Istio",
+  "difficulty": "Medium",
+  "type": "task",
+  "weight": 6,
+  "description": "## Inject an HTTP Fault with VirtualService\n\nFault injection is a chaos-engineering technique to test how services handle failures. Istio can inject HTTP errors and delays without modifying application code.\n\n**Your task:**\n\nA `VirtualService` named `ratings` already exists in the `istio-lab` namespace. Update it to inject an **HTTP 500 error** for **100%** of requests to the `ratings` service.\n\nThe fault must be defined under `spec.http[0].fault.abort` with:\n- `httpStatus: 500`\n- `percentage.value: 100`\n\n```bash\n# Verify:\nkubectl get virtualservice ratings -n istio-lab -o jsonpath='{.spec.http[0].fault.abort.httpStatus}'\n```",
+  "hints": [
+    {
+      "title": "VirtualService fault injection structure",
+      "body": "Add a fault.abort block inside the http[] rule. The percentage.value field controls what fraction of requests are aborted.",
+      "command": "kubectl apply -f - <<EOF\napiVersion: networking.istio.io/v1beta1\nkind: VirtualService\nmetadata:\n  name: ratings\n  namespace: istio-lab\nspec:\n  hosts:\n  - ratings\n  http:\n  - fault:\n      abort:\n        httpStatus: 500\n        percentage:\n          value: 100\n    route:\n    - destination:\n        host: ratings\nEOF"
+    }
+  ],
+  "setup_commands": [
+    { "command": "kubectl create namespace istio-lab 2>/dev/null || true" },
+    {
+      "command": "kubectl apply -f - <<EOF\napiVersion: networking.istio.io/v1beta1\nkind: VirtualService\nmetadata:\n  name: ratings\n  namespace: istio-lab\nspec:\n  hosts:\n  - ratings\n  http:\n  - route:\n    - destination:\n        host: ratings\nEOF"
+    }
+  ],
+  "teardown_commands": [
+    { "command": "kubectl delete virtualservice ratings -n istio-lab --ignore-not-found" },
+    { "command": "kubectl delete namespace istio-lab --ignore-not-found" }
+  ],
+  "default_namespace": "istio-lab",
+  "validation": {
+    "description": "Check that the VirtualService has an HTTP 500 abort fault at 100%",
+    "commands": [
+      {
+        "description": "abort httpStatus is 500",
+        "command": "kubectl get virtualservice ratings -n istio-lab -o jsonpath='{.spec.http[0].fault.abort.httpStatus}'",
+        "expected_output": "500",
+        "match": "exact"
+      },
+      {
+        "description": "abort percentage is 100",
+        "command": "kubectl get virtualservice ratings -n istio-lab -o jsonpath='{.spec.http[0].fault.abort.percentage.value}'",
+        "expected_output": "100",
+        "match": "exact"
+      }
+    ]
+  }
+}

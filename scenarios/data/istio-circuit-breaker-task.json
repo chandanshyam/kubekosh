@@ -1,0 +1,54 @@
+{
+  "id": "istio-circuit-breaker-task",
+  "title": "Configure Circuit Breaker with DestinationRule",
+  "category": "Istio",
+  "difficulty": "Hard",
+  "type": "task",
+  "weight": 7,
+  "description": "## Configure Circuit Breaker with DestinationRule\n\nIstio implements circuit breaking via the `outlierDetection` field in a `DestinationRule`. When a host starts returning errors, Istio ejects it from the load-balancing pool for a penalty period, protecting upstream callers.\n\n**Your task:**\n\nCreate a `DestinationRule` named `payments` in the `istio-lab` namespace for the host `payments` with the following outlier detection settings:\n- Eject a host after **3** consecutive 5xx errors (`consecutiveGatewayErrors: 3`)\n- Scan for unhealthy hosts every **10s** (`interval: 10s`)\n- Keep ejected hosts out for **30s** (`baseEjectionTime: 30s`)\n- Allow up to **50%** of hosts to be ejected simultaneously (`maxEjectionPercent: 50`)\n\n```bash\n# Verify:\nkubectl get destinationrule payments -n istio-lab -o jsonpath='{.spec.trafficPolicy.outlierDetection.consecutiveGatewayErrors}'\n```",
+  "hints": [
+    {
+      "title": "DestinationRule outlierDetection structure",
+      "body": "Place outlierDetection under spec.trafficPolicy. All four fields must be present for full circuit breaker behaviour.",
+      "command": "kubectl apply -f - <<EOF\napiVersion: networking.istio.io/v1beta1\nkind: DestinationRule\nmetadata:\n  name: payments\n  namespace: istio-lab\nspec:\n  host: payments\n  trafficPolicy:\n    outlierDetection:\n      consecutiveGatewayErrors: 3\n      interval: 10s\n      baseEjectionTime: 30s\n      maxEjectionPercent: 50\nEOF"
+    }
+  ],
+  "setup_commands": [
+    { "command": "kubectl create namespace istio-lab 2>/dev/null || true" },
+    { "command": "kubectl delete destinationrule payments -n istio-lab --ignore-not-found" }
+  ],
+  "teardown_commands": [
+    { "command": "kubectl delete destinationrule payments -n istio-lab --ignore-not-found" },
+    { "command": "kubectl delete namespace istio-lab --ignore-not-found" }
+  ],
+  "default_namespace": "istio-lab",
+  "validation": {
+    "description": "Check that the DestinationRule has the correct circuit breaker settings",
+    "commands": [
+      {
+        "description": "DestinationRule payments exists in istio-lab",
+        "command": "kubectl get destinationrule payments -n istio-lab -o jsonpath='{.metadata.name}'",
+        "expected_output": "payments",
+        "match": "exact"
+      },
+      {
+        "description": "consecutiveGatewayErrors is 3",
+        "command": "kubectl get destinationrule payments -n istio-lab -o jsonpath='{.spec.trafficPolicy.outlierDetection.consecutiveGatewayErrors}'",
+        "expected_output": "3",
+        "match": "exact"
+      },
+      {
+        "description": "baseEjectionTime is 30s",
+        "command": "kubectl get destinationrule payments -n istio-lab -o jsonpath='{.spec.trafficPolicy.outlierDetection.baseEjectionTime}'",
+        "expected_output": "30s",
+        "match": "exact"
+      },
+      {
+        "description": "maxEjectionPercent is 50",
+        "command": "kubectl get destinationrule payments -n istio-lab -o jsonpath='{.spec.trafficPolicy.outlierDetection.maxEjectionPercent}'",
+        "expected_output": "50",
+        "match": "exact"
+      }
+    ]
+  }
+}

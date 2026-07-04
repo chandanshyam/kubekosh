@@ -1,0 +1,52 @@
+{
+  "id": "istio-virtualservice-canary-task",
+  "title": "Canary Routing with VirtualService",
+  "category": "Istio",
+  "difficulty": "Medium",
+  "type": "task",
+  "weight": 6,
+  "description": "## Canary Routing with VirtualService\n\nA service named `bookinfo` runs in the `istio-lab` namespace with two `DestinationRule` subsets already defined:\n- `v1` — targets pods with label `version: v1`\n- `v2` — targets pods with label `version: v2`\n\n**Your task:**\n\nCreate a `VirtualService` named `bookinfo` in the `istio-lab` namespace that routes **80%** of traffic to subset `v1` and **20%** to subset `v2`.\n\nThe VirtualService must target the host `bookinfo` and apply to all traffic (no gateway field needed).\n\n```bash\n# Verify:\nkubectl get virtualservice bookinfo -n istio-lab -o jsonpath='{.spec.http[0].route[*].weight}'\n```",
+  "hints": [
+    {
+      "title": "VirtualService weighted routing structure",
+      "body": "Use the http[].route[].weight field. Weights must sum to 100. Reference the DestinationRule subsets by name in the destination.subset field.",
+      "command": "kubectl apply -f - <<EOF\napiVersion: networking.istio.io/v1beta1\nkind: VirtualService\nmetadata:\n  name: bookinfo\n  namespace: istio-lab\nspec:\n  hosts:\n  - bookinfo\n  http:\n  - route:\n    - destination:\n        host: bookinfo\n        subset: v1\n      weight: 80\n    - destination:\n        host: bookinfo\n        subset: v2\n      weight: 20\nEOF"
+    }
+  ],
+  "setup_commands": [
+    { "command": "kubectl create namespace istio-lab 2>/dev/null || true" },
+    { "command": "kubectl delete virtualservice bookinfo -n istio-lab --ignore-not-found" },
+    {
+      "command": "kubectl apply -f - <<EOF\napiVersion: networking.istio.io/v1beta1\nkind: DestinationRule\nmetadata:\n  name: bookinfo\n  namespace: istio-lab\nspec:\n  host: bookinfo\n  subsets:\n  - name: v1\n    labels:\n      version: v1\n  - name: v2\n    labels:\n      version: v2\nEOF"
+    }
+  ],
+  "teardown_commands": [
+    { "command": "kubectl delete virtualservice bookinfo -n istio-lab --ignore-not-found" },
+    { "command": "kubectl delete destinationrule bookinfo -n istio-lab --ignore-not-found" },
+    { "command": "kubectl delete namespace istio-lab --ignore-not-found" }
+  ],
+  "default_namespace": "istio-lab",
+  "validation": {
+    "description": "Check that the VirtualService has the correct 80/20 weight split",
+    "commands": [
+      {
+        "description": "VirtualService bookinfo exists in istio-lab",
+        "command": "kubectl get virtualservice bookinfo -n istio-lab -o jsonpath='{.metadata.name}'",
+        "expected_output": "bookinfo",
+        "match": "exact"
+      },
+      {
+        "description": "v1 weight is 80",
+        "command": "kubectl get virtualservice bookinfo -n istio-lab -o jsonpath='{.spec.http[0].route[0].weight}'",
+        "expected_output": "80",
+        "match": "exact"
+      },
+      {
+        "description": "v2 weight is 20",
+        "command": "kubectl get virtualservice bookinfo -n istio-lab -o jsonpath='{.spec.http[0].route[1].weight}'",
+        "expected_output": "20",
+        "match": "exact"
+      }
+    ]
+  }
+}

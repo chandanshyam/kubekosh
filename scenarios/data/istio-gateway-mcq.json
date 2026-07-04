@@ -1,0 +1,27 @@
+{
+  "id": "istio-gateway-mcq",
+  "title": "Istio Gateway vs Kubernetes Ingress",
+  "category": "Istio",
+  "difficulty": "Easy",
+  "type": "mcq",
+  "weight": 3,
+  "description": "## Istio Gateway vs Kubernetes Ingress\n\nIstio provides its own `Gateway` resource as an alternative to the standard Kubernetes `Ingress`.\n\nWhich of the following is a key advantage of using an Istio `Gateway` + `VirtualService` over a plain Kubernetes `Ingress`?",
+  "options": [
+    { "id": "a", "text": "Istio Gateway is cheaper to operate than an Ingress controller" },
+    { "id": "b", "text": "Istio Gateway supports mTLS termination, traffic mirroring, weighted routing, and fault injection that standard Ingress cannot express" },
+    { "id": "c", "text": "Kubernetes Ingress requires a CRD installation; Istio Gateway is built in" },
+    { "id": "d", "text": "Istio Gateway automatically creates DNS records, whereas Ingress does not" }
+  ],
+  "correct_option": "b",
+  "explanation": "Istio Gateway exposes a port on the Ingress Gateway pod but delegates all routing rules to a VirtualService. This unlocks the full power of Istio traffic management at the edge: mTLS termination, fault injection, traffic mirroring, weighted canary routing, header-based routing, retries, and timeouts — none of which are expressible in standard Kubernetes Ingress annotations in a portable way.",
+  "hints": [
+    {
+      "title": "Gateway selects the proxy, VirtualService defines routes",
+      "body": "A Gateway resource binds to a specific label selector (usually the Istio ingress gateway pod) and opens a port. A VirtualService then references that Gateway to apply routing rules.",
+      "command": "kubectl get gateway,virtualservice -A"
+    }
+  ],
+  "setup_commands": [],
+  "teardown_commands": [],
+  "default_namespace": "default"
+}
