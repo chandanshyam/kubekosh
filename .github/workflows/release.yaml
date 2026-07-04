@@ -120,6 +120,7 @@ jobs:
 
     permissions:
       contents: write
+      pull-requests: read
 
     steps:
       - name: Checkout repository
@@ -140,7 +141,16 @@ jobs:
         id: changelog
         uses: orhun/git-cliff-action@v4
         with:
-          args: --latest --strip header
+          args: |-
+            --latest --strip header
+            --body "{% for group, commits in commits | group_by(attribute=\"group\") %}
+            ### {{ group | upper_first }}
+            {% for commit in commits %}
+            - {{ commit.message | upper_first | trim }}{% if commit.remote.username %} - @{{ commit.remote.username }}{% endif %}{% if commit.breaking %} [**breaking**]{% endif %}
+            {% endfor %}
+            {% endfor %}"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         continue-on-error: true
 
       - name: Create GitHub Release
