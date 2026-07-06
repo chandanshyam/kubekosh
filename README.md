@@ -135,6 +135,7 @@ Each install **streams live logs**, **resolves dependencies automatically** (ins
 |---|---|---|
 | ⎈ Helm | OS | Kubernetes package manager |
 | 🧱 Kustomize | OS | Template-free manifest customization |
+| 🦅 Falco | Cluster | Cloud-native runtime security tool |
 | 🛡️ Kyverno | Cluster | Policy engine (validate / mutate / generate) |
 | 🔐 cert-manager | Cluster | Automated TLS certificate management |
 | 🚪 Gateway API | Cluster | Next-generation ingress / routing CRDs |
@@ -155,6 +156,7 @@ Some add-ons expose a web UI through the same `7554` port (no extra ports to pub
 | Grafana | http://localhost:7554/grafana | from kube-prometheus-stack; login `admin` / `prom-operator` |
 | OpenCost | http://localhost:7554/opencost | cost explorer (uses Prometheus from kube-prometheus-stack) |
 | Traefik | http://localhost:7554/traefik | routers, services & middlewares dashboard |
+| Falco UI | http://localhost:7554/falco | Falcosidekick Web UI dashboard |
 
 ---
 

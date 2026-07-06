@@ -238,7 +238,11 @@ async function runCommand(cmd, timeoutMs = 15000) {
     const { stdout } = await execAsync(cmd, {
       timeout: timeoutMs,
       encoding: 'utf8',
-      env: { ...process.env, KUBECONFIG: process.env.KUBECONFIG || '/root/.kube/config' }
+      env: { 
+        ...process.env, 
+        PATH: `${ADDONS_BIN_DIR}:${process.env.PATH || ''}`,
+        KUBECONFIG: process.env.KUBECONFIG || '/root/.kube/config' 
+      }
     });
     return { success: true, output: stdout.trim() };
   } catch (e) {

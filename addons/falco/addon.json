@@ -1,0 +1,36 @@
+{
+  "id": "falco",
+  "name": "Falco",
+  "description": "The cloud-native runtime security tool — detects anomalous activity, privilege escalations, and namespace violations in your containers and host in real-time. Installs Falco along with Falcosidekick and a web dashboard.",
+  "category": "Security & Policy",
+  "icon": "🦅",
+  "logo": "https://raw.githubusercontent.com/cncf/artwork/master/projects/falco/icon/color/falco-icon-color.svg",
+  "target": "cluster",
+  "version": "0.44.1",
+  "docs_url": "https://falco.org/docs/",
+  "est_seconds": 900,
+  "arch_support": ["amd64", "arm64"],
+  "tags": ["security", "runtime", "threat-detection", "helm"],
+  "dependencies": ["helm"],
+  "setup_commands": [
+    {
+      "command": "helm repo add falcosecurity https://falcosecurity.github.io/charts --force-update && helm repo update falcosecurity",
+      "label": "Adding Falco Helm repo"
+    },
+    {
+      "command": "helm upgrade --install falco falcosecurity/falco --version 9.1.0 --namespace falco --create-namespace --set tty=true --set falcosidekick.enabled=true --set falcosidekick.webui.enabled=true --set falcosidekick.webui.disableauth=true --wait --timeout 15m",
+      "label": "Installing Falco and Falcosidekick"
+    }
+  ],
+  "teardown_commands": [
+    {
+      "command": "helm uninstall falco -n falco 2>/dev/null || true",
+      "label": "Uninstalling Falco"
+    },
+    {
+      "command": "kubectl delete namespace falco --ignore-not-found",
+      "label": "Removing namespace"
+    }
+  ],
+  "health_command": "helm status falco -n falco"
+}
