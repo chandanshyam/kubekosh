@@ -28,6 +28,8 @@ export default function App() {
   const { addons, refresh: refreshAddons } = useAddons()
   const [bundles, setBundles] = useState([])
   const [activeBundleId, setActiveBundleId] = useState(null)
+  const [tracks, setTracks] = useState([])
+  const [activeTrackId, setActiveTrackId] = useState(null)
 
   const [scenarios, setScenarios] = useState([])
   const [activeId, setActiveId] = useState(null)
@@ -117,6 +119,17 @@ export default function App() {
   }, [addons, refreshAddons])
 
 
+  // ── Load tracks (once) ────────────────────────────────────────────────────
+  useEffect(() => {
+    fetch('/api/tracks')
+      .then(r => r.json())
+      .then(data => {
+        setTracks(data)
+        if (data.length > 0) setActiveTrackId(data[0].id)
+      })
+      .catch(console.error)
+  }, [])
+
   // ── Load bundles (once) ───────────────────────────────────────────────────
   useEffect(() => {
     fetch('/api/bundles')
@@ -190,11 +203,13 @@ export default function App() {
     const scenarioUrl = examSession?.id
       ? `/api/scenarios?session=${examSession.id}`
       : `/api/scenarios?bundle=${activeBundleId}`
-    const [bundleData, scenarioData] = await Promise.all([
+    const [bundleData, trackData, scenarioData] = await Promise.all([
       fetch('/api/bundles').then(r => r.json()),
+      fetch('/api/tracks').then(r => r.json()),
       fetch(scenarioUrl).then(r => r.json()),
     ])
     setBundles(bundleData)
+    setTracks(trackData)
     setScenarios(scenarioData)
     setProgress(Object.fromEntries(scenarioData.map(s => [s.id, s.progress])))
     if (activeId) {
@@ -308,6 +323,7 @@ export default function App() {
   const currentSidebarW = sidebarCollapsed ? SIDEBAR_COLLAPSED_W : sidebarW
   const currentTermH = termCollapsed ? MIN_TERM_H : termH
   const activeBundle = bundles.find(b => b.id === activeBundleId) || null
+  const activeTrack = tracks.find(t => t.id === activeTrackId) || null
   const isMcq = scenario?.type === 'mcq'
 
   // In exam mode: scenarios are already pre-filtered and ordered by the session API
@@ -324,6 +340,20 @@ export default function App() {
         onShowHistory={() => setShowHistory(true)}
         onShowAddons={() => setShowAddons(true)}
         addons={addons}
+        tracks={tracks}
+        activeTrackId={activeTrackId}
+        onTrackSelect={trackId => {
+          if (examSession) return  // lock during exam
+          setActiveTrackId(trackId)
+          const track = tracks.find(t => t.id === trackId)
+          if (track?.bundle_ids?.length) {
+            const firstBundleId = track.bundle_ids[0]
+            setActiveBundleId(firstBundleId)
+            setActiveId(null)
+            setScenario(null)
+          }
+        }}
+        onCacheReloaded={refreshProgress}
       />
 
       {/* Bundle navigation bar */}
@@ -340,6 +370,7 @@ export default function App() {
         onStartExam={setExamModalBundle}
         collapsed={bundlesCollapsed}
         onToggleCollapse={() => setBundlesCollapsed(c => !c)}
+        activeTrack={activeTrack}
       />
 
       {/* Exam timer bar */}

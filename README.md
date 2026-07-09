@@ -81,12 +81,19 @@ docker buildx build --platform linux/amd64,linux/arm64 -t kubekosh .
 
 ## What's Inside
 
-| Bundle | Focus | Exam Mode |
-|---|---|---|
-| 🌱 Kubernetes Basics | Core concepts | 60 min |
-| 🧑‍✈️ Kubernetes Administrator | CKA | 120 min |
-| 🛠️ Kubernetes Developer | CKAD | 120 min |
-| 🛡️ Kubernetes Security | CKS | 120 min |
+Scenarios are organized into **tracks** (themes) containing one or more **bundles** (focused study sets):
+
+| Track | Bundle | Focus | Scenarios | Exam |
+|---|---|---|:---:|:---:|
+| 💡 Core Concepts | 🌱 Kubernetes Basics | Pods, deployments, services, config | 13 | 60 min |
+| 💡 Core Concepts | 🔀 Gateway API | Gateways, HTTPRoutes, TLS routing | 10 | 60 min |
+| 🎓 Certifications | 🧑‍✈️ Kubernetes Administrator | CKA prep — nodes, RBAC, storage | 12 | 120 min |
+| 🎓 Certifications | 🛠️ Kubernetes Developer | CKAD prep — workloads, probes, HPA | 8 | 120 min |
+| 🎓 Certifications | 🔐 Kubernetes Security | CKS prep — PSA, NetworkPolicy, OPA | 8 | 120 min |
+| 🌐 Networking | ⛵ Istio | Traffic management, mTLS, VirtualServices | 10 | 60 min |
+| 🌐 Networking | 🚦 Traefik | IngressRoutes, middlewares, TLS | 10 | 60 min |
+| 🌐 Networking | 🔀 HAProxy Ingress | Annotations, backends, load balancing | 10 | 60 min |
+| 🛡️ Security & Policy | 🦅 Falco | Runtime threat detection, custom rules | 10 | 60 min |
 
 **Scenario types:**
 - **Task** — Hands-on challenge in the live terminal. Click **Validate** for automated cluster-state checking.
@@ -180,7 +187,9 @@ Everything runs inside a **single Docker image** managed by `scripts/entrypoint.
 scenarios/
 ├── data/             # One JSON file per scenario  -> <scenario-id>.json
 ├── bundles/          # One JSON file per bundle    -> <bundle-id>.json
-└── SCHEMA.md         # Full schema reference
+├── tracks/           # One JSON file per track     -> <track-id>.json
+│   └── SCHEMA.md     # Tracks schema reference
+└── SCHEMA.md         # Bundles & scenarios schema reference
 
 addons/
 ├── <addon-id>/       # One folder per add-on, each with an addon.json manifest
@@ -212,9 +221,15 @@ We also expect all participants to adhere to our [Code of Conduct](CODE_OF_CONDU
 
 You can find the list of core project maintainers in the [Maintainers' List](MAINTAINERS.md).
 
-### Adding Scenarios
+### Adding Scenarios, Bundles & Tracks
 
-Each scenario is a single JSON file in `scenarios/data` directory; each bundle is a single JSON file in `scenarios/bundles` directory. See [`scenarios/SCHEMA.md`](scenarios/SCHEMA.md) for the full schema.
+The curriculum is organized in three tiers:
+
+| Tier | Directory | Schema |
+|---|---|---|
+| Tracks | `scenarios/tracks/` | [`scenarios/tracks/SCHEMA.md`](scenarios/tracks/SCHEMA.md) |
+| Bundles | `scenarios/bundles/` | [`scenarios/SCHEMA.md`](scenarios/SCHEMA.md) |
+| Scenarios | `scenarios/data/` | [`scenarios/SCHEMA.md`](scenarios/SCHEMA.md) |
 
 **Task checklist:**
 - `validation.commands` — idempotent `kubectl` commands only
@@ -224,13 +239,18 @@ Each scenario is a single JSON file in `scenarios/data` directory; each bundle i
 - `correct_option` must match one of the `options[].id` values
 - Always include an `explanation`
 
+**Track/Bundle checklist:**
+- Bundle `id` must match its filename (without `.json`)
+- Track `id` must match its filename (without `.json`)
+- Each bundle must be listed in exactly one track's `bundle_ids`
+
 ### Adding Add-ons
 
 Each add-on is a folder under `addons/` containing a single `addon.json` manifest. See [`addons/SCHEMA.md`](addons/SCHEMA.md) for the full schema, field reference, runtime variables, and worked examples — its `id` must match the folder name.
 
 ### In-Memory Cache & Hot Reloading
 
-To ensure high performance and zero disk-I/O bottlenecking, scenarios, bundles, and add-on manifests are cached in memory on backend startup. When developing or updating them, you can hot-reload the definitions without rebuilding the image or restarting the container:
+To ensure high performance and zero disk-I/O bottlenecking, scenarios, bundles, tracks, and add-on manifests are cached in memory on backend startup. When developing or updating them, you can hot-reload the definitions without rebuilding the image or restarting the container:
 
 1. **Mount the Directory:** Run the container with the local `scenarios/` directory mounted to `/app/scenarios` (and/or `addons/` to `/app/addons` for add-on work):
    ```bash
@@ -244,7 +264,7 @@ To ensure high performance and zero disk-I/O bottlenecking, scenarios, bundles, 
    ```
 
 > **NOTE:**
-> The content in `<path_to_scenarios_directory>` should be the path to the local `scenarios/` directory of the cloned repository with your updates, i.e., it should contain the updated `scenarios/data` and `scenarios/bundles` directories.
+> The `<path_to_scenarios_directory>` should point to the local `scenarios/` directory of the cloned repository. It should contain the updated `scenarios/data`, `scenarios/bundles`, and `scenarios/tracks` sub-directories.
 
 ### Workflow
 

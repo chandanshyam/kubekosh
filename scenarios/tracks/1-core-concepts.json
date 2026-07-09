@@ -1,0 +1,12 @@
+{
+  "id": "1-core-concepts",
+  "name": "Core Concepts",
+  "icon": "💡",
+  "tagline": "Essential building blocks of Kubernetes",
+  "color": "#06b6d4",
+  "colorDim": "rgba(6,182,212,0.12)",
+  "bundle_ids": [
+    "1-k8s-basics",
+    "8-gateway-api"
+  ]
+}

@@ -39,7 +39,8 @@ app.use((req, res, next) => {
 app.use(express.static(path.join(__dirname, '../frontend/dist')));
 
 const SCENARIOS_DIR = path.join(__dirname, '../scenarios/data');
-const BUNDLES_DIR   = path.join(__dirname, '../scenarios/bundles');
+const BUNDLES_DIR = path.join(__dirname, '../scenarios/bundles');
+const TRACKS_DIR = path.join(__dirname, '../scenarios/tracks');
 const DB_FILE = process.env.PROGRESS_DB || '/data/progress.db';
 
 // ── Addons system paths (env-overridable for testability) ─────────────────────
@@ -47,9 +48,9 @@ const DB_FILE = process.env.PROGRESS_DB || '/data/progress.db';
 // ADDONS_STATE_FILE — runtime install state, persisted on the /data mount
 // ADDONS_BIN_DIR    — install target for target:"os" binaries; on /data so it
 //                     survives container restarts and is added to the shell PATH
-const ADDONS_DIR        = process.env.ADDONS_DIR        || path.join(__dirname, '../addons');
+const ADDONS_DIR = process.env.ADDONS_DIR || path.join(__dirname, '../addons');
 const ADDONS_STATE_FILE = process.env.ADDONS_STATE_FILE || '/data/addons-state.json';
-const ADDONS_BIN_DIR    = process.env.ADDONS_BIN_DIR    || '/data/addons/bin';
+const ADDONS_BIN_DIR = process.env.ADDONS_BIN_DIR || '/data/addons/bin';
 
 // ── SQLite progress store ─────────────────────────────────────────────────────
 
@@ -73,13 +74,13 @@ function getDb() {
   try {
     const tableInfo = _db.prepare("PRAGMA table_info(progress)").all();
     const existingColumns = tableInfo.map(col => col.name);
-    
+
     const requiredColumns = [
       { name: 'started_at', type: 'TEXT' },
       { name: 'notes', type: 'TEXT' },
       { name: 'time_spent_seconds', type: 'INTEGER' }
     ];
-    
+
     for (const col of requiredColumns) {
       if (!existingColumns.includes(col.name)) {
         console.log(`Migrating progress database schema: Adding column '${col.name}' (${col.type})`);
@@ -186,21 +187,23 @@ function loadJsonDir(dir) {
     .map(f => JSON.parse(fs.readFileSync(path.join(dir, f), 'utf8')));
 }
 
-let scenariosCache = [];
+let tracksCache = [];
 let bundlesCache = [];
+let scenariosCache = [];
 let addonsCache = [];
 
 function reloadCache() {
   try {
-    scenariosCache = loadJsonDir(SCENARIOS_DIR);
-    bundlesCache = loadJsonDir(BUNDLES_DIR);
+    tracksCache = fs.existsSync(TRACKS_DIR) ? loadJsonDir(TRACKS_DIR) : [];
+    bundlesCache = fs.existsSync(BUNDLES_DIR) ? loadJsonDir(BUNDLES_DIR) : [];
+    scenariosCache = fs.existsSync(SCENARIOS_DIR) ? loadJsonDir(SCENARIOS_DIR) : [];
 
     const { addons, errors } = loadAddonManifests(ADDONS_DIR);
     addonsCache = addons;
     errors.forEach(e => console.warn(`Addon manifest issue: ${e}`));
     validateGraph(addonsCache).forEach(e => console.warn(`Addon dependency issue: ${e}`));
 
-    console.log(`Loaded ${scenariosCache.length} scenarios, ${bundlesCache.length} bundles, and ${addonsCache.length} addons into cache.`);
+    console.log(`Loaded ${scenariosCache.length} scenarios, ${bundlesCache.length} bundles, ${tracksCache.length} tracks, and ${addonsCache.length} addons into cache.`);
   } catch (e) {
     console.error('Failed to reload cache:', e.message);
   }
@@ -229,6 +232,10 @@ function loadBundles() {
   return bundlesCache;
 }
 
+function loadTracks() {
+  return tracksCache;
+}
+
 function loadAddons() {
   return addonsCache;
 }
@@ -238,10 +245,10 @@ async function runCommand(cmd, timeoutMs = 15000) {
     const { stdout } = await execAsync(cmd, {
       timeout: timeoutMs,
       encoding: 'utf8',
-      env: { 
-        ...process.env, 
+      env: {
+        ...process.env,
         PATH: `${ADDONS_BIN_DIR}:${process.env.PATH || ''}`,
-        KUBECONFIG: process.env.KUBECONFIG || '/root/.kube/config' 
+        KUBECONFIG: process.env.KUBECONFIG || '/root/.kube/config'
       }
     });
     return { success: true, output: stdout.trim() };
@@ -533,13 +540,28 @@ app.post('/api/scenarios/:id/context', async (req, res) => {
   res.json({ ok: true, namespace: ns });
 });
 
+// GET /api/tracks — list tracks with per-track progress stats
+app.get('/api/tracks', (req, res) => {
+  const tracks = loadTracks();
+  const bundles = loadBundles();
+  const progress = loadProgress();
+  const result = tracks.map(t => {
+    const trackBundles = (t.bundle_ids || []).map(id => bundles.find(b => b.id === id)).filter(Boolean);
+    const allScenarioIds = trackBundles.flatMap(b => b.scenario_ids || []);
+    const total = allScenarioIds.length;
+    const completed = allScenarioIds.filter(id => progress[id]?.status === 'completed').length;
+    return { ...t, stats: { total, completed, bundles: trackBundles.length } };
+  });
+  res.json(result);
+});
+
 // GET /api/bundles — list bundles with per-bundle progress stats
 app.get('/api/bundles', (req, res) => {
-  const bundles   = loadBundles();
+  const bundles = loadBundles();
   const scenarios = loadScenarios();
-  const progress  = loadProgress();
+  const progress = loadProgress();
   const result = bundles.map(b => {
-    const total     = b.scenario_ids.length;
+    const total = b.scenario_ids.length;
     const completed = b.scenario_ids.filter(id => progress[id]?.status === 'completed').length;
     return { ...b, stats: { total, completed } };
   });
@@ -549,7 +571,7 @@ app.get('/api/bundles', (req, res) => {
 // GET /api/scenarios — list scenarios; optional ?bundle=<id> and ?session=<id> filter
 app.get('/api/scenarios', (req, res) => {
   const scenarios = loadScenarios()
-  const progress  = loadProgress()
+  const progress = loadProgress()
   const { bundle, session: sessionId } = req.query
 
   // Session-scoped: return only session scenario_ids in their shuffled order
@@ -816,7 +838,7 @@ app.post('/api/progress/reset/:id', (req, res) => {
   }
 });
 
-// POST /api/cache/reload — reload scenarios and bundles cache
+// POST /api/cache/reload — reload scenarios, bundles, tracks and addons cache
 app.post('/api/cache/reload', (req, res) => {
   reloadCache();
   res.json({
@@ -824,6 +846,7 @@ app.post('/api/cache/reload', (req, res) => {
     message: 'Cache reloaded successfully',
     scenarios_count: loadScenarios().length,
     bundles_count: loadBundles().length,
+    tracks_count: loadTracks().length,
     addons_count: loadAddons().length
   });
 });

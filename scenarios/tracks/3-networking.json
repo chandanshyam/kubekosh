@@ -1,0 +1,13 @@
+{
+  "id": "3-networking",
+  "name": "Networking",
+  "icon": "🌐",
+  "tagline": "Service mesh, traffic management, and network policies",
+  "color": "#7c3aed",
+  "colorDim": "rgba(124,58,237,0.12)",
+  "bundle_ids": [
+    "5-istio",
+    "6-traefik",
+    "7-haproxy-ingress"
+  ]
+}

@@ -1,0 +1,178 @@
+/* ── Wrapper ─────────────────────────────────────────────────────────────────── */
+.wrap {
+  position: relative;
+  flex-shrink: 0;
+}
+
+/* ── Trigger pill ────────────────────────────────────────────────────────────── */
+.trigger {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 12px 8px 10px;
+  background: var(--tdim, var(--surface2));
+  border: 1px solid color-mix(in srgb, var(--tcolor, var(--border)) 35%, transparent);
+  border-radius: var(--radius, 6px);
+  cursor: pointer;
+  font-family: var(--sans);
+  color: var(--text);
+  font-weight: 600;
+  transition: background 0.15s, border-color 0.15s, color 0.15s, box-shadow 0.15s;
+  white-space: nowrap;
+  line-height: 1;
+}
+
+.trigger:hover,
+.triggerOpen {
+  background: color-mix(in srgb, var(--tdim, var(--surface3)) 140%, transparent);
+  border-color: color-mix(in srgb, var(--tcolor, var(--border2)) 55%, transparent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--tcolor, transparent) 12%, transparent);
+}
+
+.triggerIcon {
+  font-size: 15px;
+  line-height: 1;
+}
+
+.triggerName {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: -0.1px;
+}
+
+.chevron {
+  color: var(--text-3);
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  flex-shrink: 0;
+}
+.chevronOpen {
+  transform: rotate(180deg);
+}
+
+/* ── Dropdown panel ──────────────────────────────────────────────────────────── */
+.panel {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  min-width: 270px;
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius-lg, 12px);
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.40), 0 4px 12px rgba(0, 0, 0, 0.2);
+  overflow: hidden;
+  z-index: 500;
+  animation: panelIn 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes panelIn {
+  from { opacity: 0; transform: translateY(-6px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0)    scale(1); }
+}
+
+/* ── Option row ──────────────────────────────────────────────────────────────── */
+.option {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  padding: 12px 14px 10px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  font-family: var(--sans);
+  transition: background 0.12s;
+  border-bottom: 1px solid var(--border);
+}
+.option:last-child {
+  border-bottom: none;
+}
+.option:hover {
+  background: color-mix(in srgb, var(--tcolor, var(--text)) 7%, transparent);
+}
+
+.optionActive {
+  background: var(--tdim, rgba(63,185,80,0.08));
+}
+.optionActive:hover {
+  background: color-mix(in srgb, var(--tdim, rgba(63,185,80,0.08)) 140%, transparent);
+}
+
+/* Top row within option */
+.optionTop {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.optionIcon {
+  font-size: 18px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.optionText {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.optionName {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.1px;
+}
+.optionActive .optionName {
+  color: var(--tcolor, var(--text));
+}
+
+.optionTagline {
+  font-size: 11px;
+  color: var(--text-3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.optionMeta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.activeDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  display: block;
+  flex-shrink: 0;
+}
+
+.optionPct {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-3);
+}
+.optionActive .optionPct {
+  color: var(--tcolor, var(--text-3));
+}
+
+/* Progress bar */
+.progressTrack {
+  width: 100%;
+  height: 3px;
+  background: var(--surface3);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.progressFill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  min-width: 0;
+}

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import styles from './Header.module.css'
+import TrackDropdown from './TrackDropdown'
 
 // ── Inline Reload Cache Modal ─────────────────────────────────────────────────
 function ReloadModal({ state, data, error, onClose, onReload }) {
@@ -23,13 +24,18 @@ function ReloadModal({ state, data, error, onClose, onReload }) {
             <div className={styles.reloadModalSub}>{data?.message}</div>
             <div className={styles.reloadStats}>
               <div className={styles.reloadStat}>
-                <span className={styles.reloadStatNum}>{data?.scenarios_count ?? '—'}</span>
-                <span className={styles.reloadStatLabel}>Scenarios</span>
+                <span className={styles.reloadStatNum}>{data?.tracks_count ?? '—'}</span>
+                <span className={styles.reloadStatLabel}>Tracks</span>
               </div>
               <div className={styles.reloadStatDivider} />
               <div className={styles.reloadStat}>
                 <span className={styles.reloadStatNum}>{data?.bundles_count ?? '—'}</span>
                 <span className={styles.reloadStatLabel}>Bundles</span>
+              </div>
+              <div className={styles.reloadStatDivider} />
+              <div className={styles.reloadStat}>
+                <span className={styles.reloadStatNum}>{data?.scenarios_count ?? '—'}</span>
+                <span className={styles.reloadStatLabel}>Scenarios</span>
               </div>
               <div className={styles.reloadStatDivider} />
               <div className={styles.reloadStat}>
@@ -66,7 +72,7 @@ function ReloadModal({ state, data, error, onClose, onReload }) {
 }
 
 // ── Header ────────────────────────────────────────────────────────────────────
-export default function Header({ clusterReady, onShowHistory, onShowAddons, addons = [] }) {
+export default function Header({ clusterReady, onShowHistory, onShowAddons, addons = [], tracks = [], activeTrackId, onTrackSelect, onCacheReloaded }) {
   const [theme, setTheme] = useState(
     () => localStorage.getItem('kubekosh-theme') || 'dark'
   )
@@ -104,6 +110,7 @@ export default function Header({ clusterReady, onShowHistory, onShowAddons, addo
       if (response.ok) {
         const data = await response.json()
         setReloadModal({ state: 'success', data, error: null })
+        onCacheReloaded?.()
       } else {
         const data = await response.json().catch(() => ({}))
         setReloadModal({ state: 'error', data: null, error: data.error || 'Unknown error' })
@@ -118,11 +125,24 @@ export default function Header({ clusterReady, onShowHistory, onShowAddons, addo
       <header className={styles.header}>
         <div className={styles.brand}>
           <div className={styles.logo}>
-            <img src="/logo.svg" alt="KubeKosh Logo" className={styles.logoImage} />
-            <span className={styles.logoText}>KubeKosh</span>
+            <a href="/" className={styles.logoLink}>
+              <img src="/logo.svg" alt="KubeKosh Logo" className={styles.logoImage} />
+              <span className={styles.logoText}>KubeKosh</span>
+            </a>
             <span className={styles.version}>{import.meta.env.VITE_APP_VERSION}</span>
           </div>
-          <span className={styles.tagline}>Interactive Kubernetes Playground</span>
+          {tracks.length > 0 && (
+            <TrackDropdown
+              tracks={tracks}
+              activeTrackId={activeTrackId}
+              onSelect={onTrackSelect}
+            />
+          )}
+          {tracks.length > 0 && activeTrackId && (
+            <span className={styles.tagline}>
+              <strong>{'· '}</strong>{tracks.find(t => t.id === activeTrackId)?.tagline || ''}
+            </span>
+          )}
         </div>
 
         <div className={styles.right}>
@@ -215,7 +235,6 @@ export default function Header({ clusterReady, onShowHistory, onShowAddons, addo
               </a>
             </div>
           ))}
-
 
           {/* Reload cache */}
           <div className={styles.reloadBtnContainer}>

@@ -1,0 +1,13 @@
+{
+  "id": "2-certifications",
+  "name": "Certifications",
+  "icon": "🎓",
+  "tagline": "Kubernetes certification preparation",
+  "color": "#f43f5e",
+  "colorDim": "rgba(244,63,94,0.12)",
+  "bundle_ids": [
+    "2-k8s-appdev",
+    "3-k8s-admin",
+    "4-k8s-security"
+  ]
+}

@@ -1,20 +1,28 @@
 # KubeKosh Configuration Schema Reference
 
-KubeKosh uses two primary directories to define its curriculum, learning paths, and exam configurations:
-1. **Bundles (`scenarios/bundles`)**: Each file defines one high-level study bundle (e.g., CKA, CKAD, CKS), including active highlights, exam duration, ordered list of included scenarios, and other fields.
-2. **Scenarios (`scenarios/data`)**: Each file defines one individual exercise — a hands-on task or multiple-choice question (MCQ). Each scenario contains an environment setup script, cleanup script, hints, problem statement, automated validation script, and other fields.
+KubeKosh uses three primary directories to define its curriculum, learning paths, and exam configurations:
+
+1. **Tracks (`scenarios/tracks`)**: Each file defines one top-level learning track (e.g., Certifications, Networking), grouping related bundles under a common theme.
+2. **Bundles (`scenarios/bundles`)**: Each file defines one study bundle (e.g., CKA, Falco), including display metadata, exam duration, and an ordered list of scenario IDs.
+3. **Scenarios (`scenarios/data`)**: Each file defines one individual exercise — a hands-on task or multiple-choice question (MCQ). Each scenario contains an environment setup script, cleanup script, hints, problem statement, automated validation logic, and other fields.
 
 ---
 
-## 1. Bundles Schema (`scenarios/bundles`)
+## 1. Tracks Schema (`scenarios/tracks`)
 
-Each file contains a **single bundle object**. The filename must match the bundle's `id` field (e.g., `k8s-basics.json`).
+See [`scenarios/tracks/SCHEMA.md`](tracks/SCHEMA.md) for the full tracks schema reference.
+
+---
+
+## 2. Bundles Schema (`scenarios/bundles`)
+
+Each file contains a **single bundle object**. The filename must match the bundle's `id` field (e.g., `1-k8s-basics.json`).
 
 ### Schema Fields
-* **`id`** *(string, required)*: A unique, kebab-case identifier for the bundle (e.g., `k8s-basics`).
+* **`id`** *(string, required)*: A unique, kebab-case identifier for the bundle (e.g., `1-k8s-basics`). Must match the filename without extension.
 * **`name`** *(string, required)*: The human-readable name of the bundle shown in navigation (e.g., `Kubernetes Basics`).
 * **`icon`** *(string, required)*: An emoji or glyph representing the bundle (e.g., `🌱`).
-* **`tagline`** *(string, required)*: A short summary of the bundle's objectives.
+* **`tagline`** *(string, required)*: A short summary of the bundle's objectives. Shown in the bundle nav tooltip.
 * **`color`** *(string, required)*: Hex color code representing the bundle's UI identity/accent color (e.g., `#3fb950`).
 * **`colorDim`** *(string, required)*: Translucent RGBA color matching the accent color at low opacity, used for UI row highlighting (e.g., `rgba(63,185,80,0.12)`).
 * **`exam_minutes`** *(number, required)*: The time limit allocated for the mock exam in minutes (e.g., `60`).
@@ -23,7 +31,7 @@ Each file contains a **single bundle object**. The filename must match the bundl
 ### Example Bundle
 ```json
 {
-  "id": "k8s-basics",
+  "id": "1-k8s-basics",
   "name": "Kubernetes Basics",
   "icon": "🌱",
   "tagline": "Core concepts for beginners",
@@ -41,9 +49,9 @@ Each file contains a **single bundle object**. The filename must match the bundl
 
 ---
 
-## 2. Scenarios Schema (`scenarios/data`)
+## 3. Scenarios Schema (`scenarios/data`)
 
-Each file contains a **single scenario object**. The filename must match the scenario's `id` field (e.g., `k8s-basics.json`).
+Each file contains a **single scenario object**. The filename must match the scenario's `id` field (e.g., `deploy-nginx.json`).
 
 Scenarios are defined as JSON objects. A scenario can be either a hands-on console challenge (`"task"`) or a multiple-choice question (`"mcq"`).
 
@@ -105,7 +113,7 @@ Requires the user to run shell commands in the interactive terminal. The system 
         "description": "Checks the running pods count",
         "command": "kubectl get deploy nginx -o jsonpath='{.status.readyReplicas}'",
         "expected_output": "3",
-        "match": "exact" // "exact" | "contains" | "regex"
+        "match": "exact" // "exact" | "contains" | "not_contains" | "regex"
       }
     ]
   }
@@ -141,7 +149,7 @@ Renders a questionnaire block. No terminal is shown. The user answers by selecti
 
 ---
 
-## 3. Full Examples
+## 4. Full Examples
 
 ### Full Example — Hands-On Task Scenario
 ```json

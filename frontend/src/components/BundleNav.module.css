@@ -1,18 +1,19 @@
+/* ── Nav shell ──────────────────────────────────────────────────────────────── */
 .nav {
   flex-shrink: 0;
   background: var(--surface);
   border-bottom: 1px solid var(--border);
-  overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: flex-end;
   position: relative;
+  z-index: 10;
 }
 
 .fadeOverlay {
   position: absolute;
   top: 0;
-  right: 42px; /* 8px margin + 26px width + 8px gap */
+  right: 42px;
   height: 100%;
   width: 40px;
   background: linear-gradient(to right, transparent, var(--surface));
@@ -20,7 +21,7 @@
   z-index: 5;
 }
 
-/* Horizontal scroll container — no visible scrollbar */
+/* Horizontal scroll container */
 .track {
   display: flex;
   flex: 1;
@@ -29,19 +30,12 @@
   scrollbar-width: none;
   -ms-overflow-style: none;
   gap: 4px;
-  padding: 8px 10px;
+  padding: 5px 10px;
 }
 .track::-webkit-scrollbar { display: none; }
-
-.track {
-  cursor: grab;
-}
-.track.dragging {
-  cursor: grabbing;
-}
-.track.dragging * {
-  pointer-events: none; /* Prevent text selection and hover states while dragging */
-}
+.track { cursor: grab; }
+.track.dragging { cursor: grabbing; }
+.track.dragging * { pointer-events: none; }
 
 .collapseWrap {
   flex-shrink: 0;
@@ -65,15 +59,16 @@
   color: var(--text);
 }
 
-/* ── Tab button ────────────────────────────────────────────────────────────── */
+/* ── Compact single-row tab ──────────────────────────────────────────────────── */
 .tab {
   position: relative;
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
+  align-items: center;
   flex-shrink: 0;
   gap: 8px;
-  padding: 9px 16px 10px;
-  min-width: 210px;
+  padding: 6px 12px 6px 10px;
+  min-width: 0;
   background: none;
   border: 1px solid var(--border);
   border-radius: var(--radius);
@@ -87,75 +82,112 @@
 .tab:hover {
   background: var(--surface2);
   border-color: var(--border2);
+  box-shadow: inset 3px 0 0 color-mix(in srgb, var(--bcolor) 40%, transparent);
 }
 
 .tab.active {
   background: var(--bdim, rgba(63,185,80,0.10));
-  border-color: color-mix(in srgb, var(--bcolor) 45%, transparent);
-  box-shadow: 0 0 0 1px color-mix(in srgb, var(--bcolor) 20%, transparent) inset;
+  border-color: color-mix(in srgb, var(--bcolor) 35%, transparent);
+  box-shadow:
+    inset 3px 0 0 var(--bcolor),
+    inset 0 0 0 1px color-mix(in srgb, var(--bcolor) 15%, transparent);
 }
 
-/* ── Top row ───────────────────────────────────────────────────────────────── */
-.tabTop {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-}
-
+/* Icon */
 .icon {
-  font-size: 18px;
+  font-size: 16px;
   line-height: 1;
   flex-shrink: 0;
-  margin-top: 1px;
 }
 
-.text {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  flex: 1;
-  min-width: 0;
-}
-
+/* Name — takes remaining horizontal space */
 .name {
-  font-size: 15px;
+  font-size: 13px;
   font-weight: 700;
   letter-spacing: -0.1px;
   color: var(--text);
+  white-space: nowrap;
+  flex: 1;
+  min-width: 0;
 }
-.tab.active .name { color: var(--bcolor, var(--green)); }
+.tab.active .name { color: var(--bcolor, var(--text)); }
 
-.tagline {
+/* Info icon with tooltip */
+.infoBtn {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-3);
+  cursor: default;
+  position: relative;
+  line-height: 1;
+  transition: color 0.15s;
+}
+.infoBtn:hover {
+  color: var(--text-2);
+}
+
+.activeTooltip {
+  position: absolute;
+  transform: translateX(-50%);
+  background: var(--surface3);
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 400;
+  padding: 4px 9px;
+  border-radius: 5px;
+  border: 1px solid var(--border2);
+  white-space: normal;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  box-sizing: border-box;
+  pointer-events: none;
+  z-index: 1000;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  animation: tooltipFadeIn 0.1s ease forwards;
+}
+
+@keyframes tooltipFadeIn {
+  from { opacity: 0; transform: translateX(-50%) translateY(-2px); }
+  to { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
+/* Count chip: "X/Y · N%" inline */
+.countChip {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 1px 7px;
+  font-family: var(--mono);
   font-size: 11px;
   color: var(--text-3);
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  transition: background 0.15s, border-color 0.15s;
+}
+.tab.active .countChip {
+  background: color-mix(in srgb, var(--bcolor) 12%, var(--surface2));
+  border-color: color-mix(in srgb, var(--bcolor) 30%, transparent);
+  color: var(--bcolor);
 }
 
-/* Count badge: stacked number + percentage */
-.countWrap {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 1px;
+.countDot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--text-3);
   flex-shrink: 0;
 }
-
-.countNum {
-  font-family: var(--mono);
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--bcolor, var(--text-2));
-  opacity: 0.9;
+.tab.active .countDot {
+  background: var(--bcolor);
 }
-
-.countPct {
-  font-family: var(--mono);
-  font-size: 10px;
-  color: var(--text-3);
-}
-.tab.active .countPct { color: var(--bcolor, var(--text-3)); opacity: 0.7; }
 
 /* Bundle reset button */
 .bundleResetBtn {
@@ -163,49 +195,17 @@
   background: none;
   border: none;
   cursor: pointer;
-  font-size: 14px;
   color: var(--text-3);
-  padding: 2px 5px;
+  padding: 2px 4px;
   border-radius: 4px;
   line-height: 1;
-  margin-left: 2px;
-  transition: color 0.12s, background 0.12s;
+  opacity: 0;
+  transition: color 0.12s, background 0.12s, opacity 0.15s;
 }
+.tab:hover .bundleResetBtn { opacity: 1; }
 .bundleResetBtn:hover {
   color: var(--red);
   background: var(--red-dim);
-}
-
-/* ── Inline progress track ─────────────────────────────────────────────────── */
-.progressTrack {
-  width: 100%;
-  height: 3px;
-  background: var(--surface3);
-  border-radius: 2px;
-  overflow: hidden;
-}
-
-.tab.active .progressTrack {
-  background: color-mix(in srgb, var(--bcolor) 25%, var(--border2));
-}
-
-.progressFill {
-  height: 100%;
-  background: var(--bcolor, var(--green));
-  border-radius: 2px;
-  transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-/* Glow on active tab's fill */
-.tab.active .progressFill {
-  box-shadow: 0 0 6px color-mix(in srgb, var(--bcolor) 60%, transparent);
-}
-
-/* Locked tab during exam */
-.tab.locked {
-  opacity: 0.4;
-  cursor: not-allowed;
-  filter: grayscale(0.5);
 }
 
 /* Start Exam button */
@@ -215,7 +215,7 @@
   border: 1px solid color-mix(in srgb, var(--blue) 35%, transparent);
   color: var(--blue);
   border-radius: 5px;
-  padding: 3px 8px;
+  padding: 2px 7px;
   font-size: 11px;
   font-weight: 700;
   font-family: var(--sans);
@@ -234,8 +234,15 @@
   border: 1px solid rgba(252,196,25,0.35);
   color: var(--amber);
   border-radius: 5px;
-  padding: 3px 8px;
+  padding: 2px 7px;
   font-size: 10px;
   font-weight: 700;
   white-space: nowrap;
+}
+
+/* Locked tab during exam */
+.tab.locked {
+  opacity: 0.4;
+  cursor: not-allowed;
+  filter: grayscale(0.5);
 }

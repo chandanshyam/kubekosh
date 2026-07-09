@@ -1,0 +1,11 @@
+{
+  "id": "4-security-policy",
+  "name": "Security & Policy",
+  "icon": "🛡️",
+  "tagline": "Runtime threat detection, compliance, and policy enforcement",
+  "color": "#f97316",
+  "colorDim": "rgba(249,115,22,0.12)",
+  "bundle_ids": [
+    "9-falco"
+  ]
+}
