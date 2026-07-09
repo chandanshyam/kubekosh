@@ -111,7 +111,7 @@ jobs:
         with:
           subject-name: docker.io/${{ env.IMAGE_NAME }}
           subject-digest: ${{ steps.push.outputs.digest }}
-          sbom-path: sbom.spdx.json
+          sbom-path: ${{ github.event.repository.name }}-${{ github.ref_name }}.spdx.json
           push-to-registry: true
 
   create-github-release:
