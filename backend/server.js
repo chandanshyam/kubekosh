@@ -9,6 +9,7 @@ const { loadAddonManifests, validateGraph } = require('./lib/addons');
 const { readState, writeState, reconcileInterrupted } = require('./lib/addon-state');
 const { createJobEngine } = require('./lib/addon-jobs');
 const { createAddonsRouter } = require('./routes/addons');
+const { reloadCache, loadScenarios, loadBundles, loadTracks, loadAddons } = require('./lib/cache');
 
 // Safety net: a single stray async error (e.g. a background addon job or health
 // probe) must not silently kill the API and put the container in a restart loop.
@@ -38,9 +39,6 @@ app.use((req, res, next) => {
 });
 app.use(express.static(path.join(__dirname, '../frontend/dist')));
 
-const SCENARIOS_DIR = path.join(__dirname, '../scenarios/data');
-const BUNDLES_DIR = path.join(__dirname, '../scenarios/bundles');
-const TRACKS_DIR = path.join(__dirname, '../scenarios/tracks');
 const DB_FILE = process.env.PROGRESS_DB || '/data/progress.db';
 
 // ── Addons system paths (env-overridable for testability) ─────────────────────
@@ -181,34 +179,6 @@ function saveProgress(progress) {
 }
 
 
-function loadJsonDir(dir) {
-  return fs.readdirSync(dir)
-    .filter(f => f.endsWith('.json'))
-    .map(f => JSON.parse(fs.readFileSync(path.join(dir, f), 'utf8')));
-}
-
-let tracksCache = [];
-let bundlesCache = [];
-let scenariosCache = [];
-let addonsCache = [];
-
-function reloadCache() {
-  try {
-    tracksCache = fs.existsSync(TRACKS_DIR) ? loadJsonDir(TRACKS_DIR) : [];
-    bundlesCache = fs.existsSync(BUNDLES_DIR) ? loadJsonDir(BUNDLES_DIR) : [];
-    scenariosCache = fs.existsSync(SCENARIOS_DIR) ? loadJsonDir(SCENARIOS_DIR) : [];
-
-    const { addons, errors } = loadAddonManifests(ADDONS_DIR);
-    addonsCache = addons;
-    errors.forEach(e => console.warn(`Addon manifest issue: ${e}`));
-    validateGraph(addonsCache).forEach(e => console.warn(`Addon dependency issue: ${e}`));
-
-    console.log(`Loaded ${scenariosCache.length} scenarios, ${bundlesCache.length} bundles, ${tracksCache.length} tracks, and ${addonsCache.length} addons into cache.`);
-  } catch (e) {
-    console.error('Failed to reload cache:', e.message);
-  }
-}
-
 // Initial cache populate
 reloadCache();
 
@@ -222,22 +192,6 @@ try {
   }
 } catch (e) {
   console.error('Addon state reconciliation failed:', e.message);
-}
-
-function loadScenarios() {
-  return scenariosCache;
-}
-
-function loadBundles() {
-  return bundlesCache;
-}
-
-function loadTracks() {
-  return tracksCache;
-}
-
-function loadAddons() {
-  return addonsCache;
 }
 
 async function runCommand(cmd, timeoutMs = 15000) {
