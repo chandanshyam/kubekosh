@@ -1,12 +1,13 @@
 'use strict';
 
 const { Router } = require('express');
+const { runCommand } = require('../lib/exec');
 
 /**
  * GET /api/health
  * Returns API liveness and k3s cluster reachability.
  */
-function createHealthRouter({ runCommand }) {
+function createHealthRouter() {
   const router = Router();
 
   router.get('/', async (req, res) => {

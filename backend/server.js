@@ -1,10 +1,7 @@
 'use strict';
 
-const express   = require('express');
-const path      = require('path');
-const { exec }  = require('child_process');
-const { promisify } = require('util');
-const execAsync = promisify(exec);
+const express = require('express');
+const path    = require('path');
 
 const { loadProgress, saveProgress } = require('./db/progress');
 
@@ -13,14 +10,14 @@ const { createJobEngine }        = require('./lib/addon-jobs');
 const { reloadCache, loadAddons } = require('./lib/cache');
 const { createTerminalServer }   = require('./lib/terminal');
 
-const { createAddonsRouter }   = require('./routes/addons');
-const { createTracksRouter }   = require('./routes/tracks');
-const { createBundlesRouter }  = require('./routes/bundles');
+const { createAddonsRouter }    = require('./routes/addons');
+const { createTracksRouter }    = require('./routes/tracks');
+const { createBundlesRouter }   = require('./routes/bundles');
 const { createScenariosRouter } = require('./routes/scenarios');
-const { createProgressRouter } = require('./routes/progress');
-const { createSessionsRouter } = require('./routes/sessions');
-const { createCacheRouter }    = require('./routes/cache');
-const { createHealthRouter }   = require('./routes/health');
+const { createProgressRouter }  = require('./routes/progress');
+const { createSessionsRouter }  = require('./routes/sessions');
+const { createCacheRouter }     = require('./routes/cache');
+const { createHealthRouter }    = require('./routes/health');
 
 // Safety net: a single stray async error (e.g. a background addon job or health
 // probe) must not silently kill the API and put the container in a restart loop.
@@ -52,37 +49,9 @@ app.use(express.static(path.join(__dirname, '../frontend/dist')));
 // ADDONS_STATE_FILE — runtime install state, persisted on the /data mount
 // ADDONS_BIN_DIR    — install target for target:"os" binaries; on /data so it
 //                     survives container restarts and is added to the shell PATH
+// NOTE: ADDONS_BIN_DIR is also read by lib/exec.js (runCommand PATH injection).
 const ADDONS_STATE_FILE = process.env.ADDONS_STATE_FILE || '/data/addons-state.json';
 const ADDONS_BIN_DIR    = process.env.ADDONS_BIN_DIR    || '/data/addons/bin';
-
-// ── Shared utilities ──────────────────────────────────────────────────────────
-
-async function runCommand(cmd, timeoutMs = 15000) {
-  try {
-    const { stdout } = await execAsync(cmd, {
-      timeout:  timeoutMs,
-      encoding: 'utf8',
-      env: {
-        ...process.env,
-        PATH:       `${ADDONS_BIN_DIR}:${process.env.PATH || ''}`,
-        KUBECONFIG: process.env.KUBECONFIG || '/root/.kube/config',
-      },
-    });
-    return { success: true, output: stdout.trim() };
-  } catch (e) {
-    return { success: false, output: (e.stdout || '').trim(), error: (e.stderr || e.message || '').trim() };
-  }
-}
-
-function checkMatch(actual, expected, matchType) {
-  const a = String(actual).trim();
-  const e = String(expected).trim();
-  if (matchType === 'exact')       return a === e;
-  if (matchType === 'contains')    return a.includes(e);
-  if (matchType === 'not_contains') return !a.includes(e);
-  if (matchType === 'regex')       return new RegExp(e).test(a);
-  return a === e;
-}
 
 // ── Bootstrap ─────────────────────────────────────────────────────────────────
 
@@ -103,15 +72,15 @@ try {
 
 // ── Mount routes ──────────────────────────────────────────────────────────────
 
-const routeDeps = { loadProgress, saveProgress, runCommand, checkMatch };
+const progressDeps = { loadProgress, saveProgress };
 
-app.use('/api/tracks',    createTracksRouter(routeDeps));
-app.use('/api/bundles',   createBundlesRouter(routeDeps));
-app.use('/api/scenarios', createScenariosRouter(routeDeps));
-app.use('/api/progress',  createProgressRouter(routeDeps));
-app.use('/api/sessions',  createSessionsRouter(routeDeps));
+app.use('/api/tracks',    createTracksRouter(progressDeps));
+app.use('/api/bundles',   createBundlesRouter(progressDeps));
+app.use('/api/scenarios', createScenariosRouter(progressDeps));
+app.use('/api/progress',  createProgressRouter(progressDeps));
+app.use('/api/sessions',  createSessionsRouter(progressDeps));
 app.use('/api/cache',     createCacheRouter());
-app.use('/api/health',    createHealthRouter(routeDeps));
+app.use('/api/health',    createHealthRouter());
 
 // Addons API — async install/remove engine + SSE streaming
 const addonEngine = createJobEngine({

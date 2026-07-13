@@ -3,6 +3,7 @@
 const { Router } = require('express');
 const { loadScenarios, loadBundles } = require('../lib/cache');
 const { injectToTerminal, refreshPrompt } = require('../lib/terminal');
+const { runCommand, checkMatch } = require('../lib/exec');
 const { getActiveSession, upsertExamProgress } = require('../db/sessions');
 
 /**
@@ -15,7 +16,7 @@ const { getActiveSession, upsertExamProgress } = require('../db/sessions');
  * POST   /api/scenarios/:id/context         — inject namespace + banner into terminal
  * POST   /api/scenarios/:id/time            — update time_spent_seconds
  */
-function createScenariosRouter({ loadProgress, saveProgress, runCommand, checkMatch }) {
+function createScenariosRouter({ loadProgress, saveProgress }) {
   const router = Router();
 
   // GET /api/scenarios
