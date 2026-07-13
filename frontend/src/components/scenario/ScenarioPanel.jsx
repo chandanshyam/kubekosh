@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import styles from './ScenarioPanel.module.css'
-import { useConfirm } from './useConfirm'
+import { useConfirm } from '@hooks/useConfirm'
 
 // Inline markdown: renders without a wrapping <p> — safe for buttons/spans
 const inlineComponents = {

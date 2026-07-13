@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react'
 import styles from './Sidebar.module.css'
-import { useConfirm } from './useConfirm'
+import { useConfirm } from '@hooks/useConfirm'
 
 const DIFF_COLOR = { Easy: 'green', Medium: 'amber', Hard: 'red' }
 const TYPE_ICON  = { task: '⚙', mcq: '◉' }

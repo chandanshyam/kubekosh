@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef } from 'react'
-import ConfirmModal from './ConfirmModal'
+import ConfirmModal from '@components/shared/ConfirmModal'
 
 /**
  * useConfirm — returns { confirm, ConfirmUI }

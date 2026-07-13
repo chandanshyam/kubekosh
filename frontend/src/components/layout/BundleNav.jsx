@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import styles from './BundleNav.module.css'
-import { useConfirm } from './useConfirm'
+import { useConfirm } from '@hooks/useConfirm'
 
 async function resetProgress(scope, opts) {
   await fetch('/api/progress/reset', {

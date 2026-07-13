@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react'
 import styles from './AddonsView.module.css'
-import { useAddons } from './useAddons'
+import { useAddons } from '@hooks/useAddons'
 import { statusMeta } from './addonStatus'
 import AddonCard from './AddonCard'
 import AddonDetail from './AddonDetail'

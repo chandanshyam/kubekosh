@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import styles from './ExamTimer.module.css'
-import { useConfirm } from './useConfirm'
+import { useConfirm } from '@hooks/useConfirm'
 
 function formatTime(secs) {
   if (secs < 0) secs = 0
