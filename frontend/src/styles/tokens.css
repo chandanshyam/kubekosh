@@ -1,0 +1,110 @@
+/*
+ * tokens.css — single source of truth for all design tokens.
+ *
+ * All CSS custom properties live here. Component module files must NEVER
+ * hard-code a colour, font, radius, or timing value — reference a token instead.
+ *
+ * This file is imported by index.css, which is the sole entry point for global
+ * styles.  Do not import this file directly from component modules.
+ */
+
+/* ── Dark theme (default) ──────────────────────────────────────────────────── */
+:root {
+  /* Surfaces */
+  --bg:         #0c0f14;
+  --surface:    #131720;
+  --surface2:   #1a2030;
+  --surface3:   #212840;
+
+  /* Borders */
+  --border:     #252d42;
+  --border2:    #2e3a55;
+
+  /* Semantic colours */
+  --green:      #39d98a;
+  --green-dim:  rgba(57, 217, 138, 0.12);
+  --blue:       #4dabf7;
+  --blue-dim:   rgba(77, 171, 247, 0.10);
+  --amber:      #fcc419;
+  --amber-dim:  rgba(252, 196, 25, 0.10);
+  --red:        #ff6b6b;
+  --red-dim:    rgba(255, 107, 107, 0.10);
+  --purple:     #9775fa;
+  --purple-dim: rgba(151, 117, 250, 0.10);
+  --teal:       #2dd4bf;
+  --teal-dim:   rgba(45, 212, 191, 0.11);
+
+  /* Text hierarchy */
+  --text:       #e2e8f4;
+  --text-2:     #8899b8;
+  --text-3:     #4d5f80;
+
+  /* Typography */
+  --mono:       'IBM Plex Mono', monospace;
+  --sans:       'Epilogue', sans-serif;
+
+  /* Shape */
+  --radius:     8px;
+  --radius-sm:  6px;
+  --radius-lg:  12px;
+
+  /* Terminal */
+  --term-bg:    #0d1117;
+
+  /* Spacing scale */
+  --space-1:    4px;
+  --space-2:    8px;
+  --space-3:    12px;
+  --space-4:    16px;
+  --space-5:    20px;
+  --space-6:    24px;
+
+  /* Motion */
+  --duration-fast:   0.12s;
+  --duration-normal: 0.15s;
+  --duration-slow:   0.25s;
+  --ease-default:    ease;
+  --ease-spring:     cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* Shadows */
+  --shadow-modal:  0 24px 60px rgba(0, 0, 0, 0.45);
+  --shadow-lg:     0 32px 80px rgba(0, 0, 0, 0.45);
+  --shadow-tooltip: 0 4px 12px rgba(0, 0, 0, 0.35);
+  --shadow-sm:     0 4px 12px rgba(0, 0, 0, 0.25);
+
+  /* Overlay */
+  --overlay-bg:    rgba(0, 0, 0, 0.6);
+  --overlay-bg-lt: rgba(0, 0, 0, 0.55);
+}
+
+/* ── Light theme ───────────────────────────────────────────────────────────── */
+:root[data-theme="light"] {
+  --bg:         #f0f4f8;
+  --surface:    #ffffff;
+  --surface2:   #f5f7fa;
+  --surface3:   #eaecf1;
+  --border:     #d6dce8;
+  --border2:    #c0c9d8;
+
+  --green:      #0d9955;
+  --green-dim:  rgba(13, 153, 85, 0.10);
+  --blue:       #1976d2;
+  --blue-dim:   rgba(25, 118, 210, 0.10);
+  --amber:      #b45309;
+  --amber-dim:  rgba(180, 83, 9, 0.10);
+  --red:        #dc2626;
+  --red-dim:    rgba(220, 38, 38, 0.10);
+  --purple:     #7c3aed;
+  --purple-dim: rgba(124, 58, 237, 0.10);
+  --teal:       #0d9488;
+  --teal-dim:   rgba(13, 148, 136, 0.11);
+
+  --text:       #111827;
+  --text-2:     #374151;
+  --text-3:     #6b7280;
+
+  --term-bg:    #f6f8fa;
+
+  --overlay-bg:    rgba(0, 0, 0, 0.50);
+  --overlay-bg-lt: rgba(0, 0, 0, 0.40);
+}

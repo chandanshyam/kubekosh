@@ -1,0 +1,237 @@
+/*
+ * mixins.css — reusable structural utility classes.
+ *
+ * These classes implement layout patterns that appear verbatim (or near-verbatim)
+ * across three or more component module files. Consuming a class from here instead
+ * of copy-pasting the same block keeps the bundle smaller and change-management trivial.
+ *
+ * Imported once by index.css — never import directly from component modules.
+ *
+ * Naming: prefix with the pattern category to avoid collisions with module-scoped
+ * class names (e.g. `.u-overlay`, `.u-modal`, `.u-btn-icon`, `.u-tooltip`).
+ *
+ * Note: "mixin" is used loosely — these are real CSS classes, not Sass mixins.
+ * Components apply them via `className` alongside their own scoped classes.
+ */
+
+/* ── Overlay ──────────────────────────────────────────────────────────────── */
+
+/**
+ * .u-overlay
+ * Full-screen dimmed backdrop used by all modal/drawer components.
+ * Apply animation variant via a sibling class on the same element.
+ */
+.u-overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--overlay-bg);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+/* ── Modal shell ──────────────────────────────────────────────────────────── */
+
+/**
+ * .u-modal
+ * Standard modal card: surface background, border, large radius, drop shadow,
+ * flex column layout with hidden overflow for internal scrolling.
+ */
+.u-modal {
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius-lg);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: var(--shadow-modal);
+}
+
+/* ── Icon button (Header-style 34×34 tilting button) ─────────────────────── */
+
+/**
+ * .u-btn-icon
+ * Square icon button matching the Header toolbar style.
+ * Apply a `[data-tooltip]` attribute and `.u-tooltip` to the wrapper for tooltips.
+ */
+.u-btn-icon {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition:
+    background var(--duration-normal),
+    border-color var(--duration-normal),
+    color var(--duration-normal),
+    transform 0.2s;
+  color: var(--text-2);
+  line-height: 1;
+  text-decoration: none;
+  font-size: 16px;
+}
+
+.u-btn-icon:hover {
+  background: var(--surface2);
+  border-color: var(--border2);
+  color: var(--text);
+  transform: rotate(12deg);
+}
+
+/* ── Tooltip wrapper ──────────────────────────────────────────────────────── */
+
+/**
+ * .u-tooltip-wrap
+ * Relative container that triggers the tooltip pseudo-element.
+ * Place `data-tooltip="Label text"` on this element.
+ */
+.u-tooltip-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.u-tooltip-wrap::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  background: var(--surface3);
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 11px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  border: 1px solid var(--border2);
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.1s ease;
+  z-index: 1000;
+  box-shadow: var(--shadow-tooltip);
+}
+
+.u-tooltip-wrap:hover::after {
+  opacity: 1;
+}
+
+/* ── Close button ─────────────────────────────────────────────────────────── */
+
+/**
+ * .u-btn-close
+ * Standard modal/panel close button (icon, text-3 default, hover surface3).
+ */
+.u-btn-close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-3);
+  font-size: 18px;
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  transition: color var(--duration-normal), background var(--duration-normal);
+  line-height: 1;
+}
+
+.u-btn-close:hover {
+  color: var(--text);
+  background: var(--surface3);
+}
+
+/* ── Action button pair ───────────────────────────────────────────────────── */
+
+/**
+ * .u-btn-primary / .u-btn-secondary
+ * Paired action buttons used in modal footers.
+ * Primary: solid colour (override --btn-color). Secondary: ghost on surface3.
+ */
+.u-btn-primary {
+  padding: 8px 18px;
+  border: none;
+  border-radius: var(--radius);
+  font-size: 13px;
+  font-weight: 700;
+  font-family: var(--sans);
+  cursor: pointer;
+  transition: opacity var(--duration-normal), transform 0.1s;
+}
+
+.u-btn-primary:hover:not(:disabled) { opacity: 0.88; }
+.u-btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.u-btn-secondary {
+  padding: 8px 18px;
+  background: var(--surface3);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-size: 13px;
+  font-weight: 600;
+  font-family: var(--sans);
+  cursor: pointer;
+  transition: background var(--duration-normal);
+}
+
+.u-btn-secondary:hover { background: var(--border); }
+
+/* ── Skeleton shimmer ─────────────────────────────────────────────────────── */
+
+/**
+ * .u-skeleton
+ * Shimmer placeholder block. Set height/border-radius on the element.
+ */
+.u-skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--surface2) 25%,
+    var(--surface3) 50%,
+    var(--surface2) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.4s infinite;
+}
+
+/* ── Badge chip ───────────────────────────────────────────────────────────── */
+
+/**
+ * .u-badge
+ * Mono-font small label chip. Apply a colour modifier class alongside.
+ */
+.u-badge {
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border: 1px solid transparent;
+}
+
+.u-badge-green { background: var(--green-dim); color: var(--green); border-color: rgba(57, 217, 138, 0.3); }
+.u-badge-red   { background: var(--red-dim);   color: var(--red);   border-color: rgba(255, 80, 80, 0.3); }
+.u-badge-amber { background: var(--amber-dim); color: var(--amber); border-color: rgba(252, 196, 25, 0.3); }
+.u-badge-grey  { background: var(--surface3);  color: var(--text-3); border-color: var(--border); }
+
+/* ── Section title ────────────────────────────────────────────────────────── */
+
+/**
+ * .u-section-title
+ * Small-caps section header used in breakdown tables.
+ */
+.u-section-title {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color: var(--text-3);
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 2px;
+}
